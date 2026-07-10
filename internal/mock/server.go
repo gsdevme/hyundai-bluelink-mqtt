@@ -1,8 +1,9 @@
 // Package mock implements an in-process stand-in for the Hyundai Bluelink EU API.
 // It serves the endpoints the client uses (authorize, certs, signin, token,
-// device registration, vehicles, CCS2 status, park location) with canned Inster
-// CCS2 data. It is shared by the godog acceptance suite and the standalone
-// `mock` subcommand, so the full pipeline can run without the real API.
+// device registration, vehicles, CCS2 + CCS1 status, location) with canned Inster
+// data. The Options.CCS2 flag selects which protocol the vehicle reports. It is
+// shared by the godog acceptance suite and the standalone `mock` subcommand, so
+// the full pipeline can run without the real API.
 package mock
 
 import (
@@ -29,6 +30,7 @@ type Options struct {
 	RangeKM         float64
 	ChargeRemainMin int // 0 => not charging
 	PluggedIn       bool
+	CCS2            bool // protocol reported to the client; false serves CCS1
 	Latitude        float64
 	Longitude       float64
 	AccessTokenTTL  time.Duration // lifetime advertised for issued access tokens
@@ -46,6 +48,7 @@ func Defaults() Options {
 		RangeKM:         268,
 		ChargeRemainMin: 145,
 		PluggedIn:       true,
+		CCS2:            true,
 		Latitude:        51.507351,
 		Longitude:       -0.127758,
 		AccessTokenTTL:  24 * time.Hour,
@@ -172,6 +175,10 @@ func (s *Server) handleVehicles(w http.ResponseWriter, _ *http.Request) {
 	s.mu.Lock()
 	o := s.opts
 	s.mu.Unlock()
+	ccs2 := 0
+	if o.CCS2 {
+		ccs2 = 1
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"retCode": "S",
 		"resMsg": map[string]any{
@@ -182,7 +189,7 @@ func (s *Server) handleVehicles(w http.ResponseWriter, _ *http.Request) {
 				"regDate":                "2026-01-15T00:00:00",
 				"vin":                    o.VIN,
 				"type":                   "EV",
-				"ccuCCS2ProtocolSupport": 1,
+				"ccuCCS2ProtocolSupport": ccs2,
 			}},
 		},
 	})
@@ -225,6 +232,105 @@ func (s *Server) handleLocation(w http.ResponseWriter, _ *http.Request) {
 			"time":  "20260710063000",
 		},
 	})
+}
+
+// handleCachedCCS1 serves the CCS1 cached status endpoint. It shares the hit
+// counter and failure toggle with the CCS2 path so tests are protocol-agnostic.
+func (s *Server) handleCachedCCS1(w http.ResponseWriter, _ *http.Request) {
+	s.mu.Lock()
+	s.CachedHits++
+	o := s.opts
+	fail := s.failStatus
+	s.mu.Unlock()
+	if fail {
+		http.Error(w, "upstream error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.carStatusCCS1(o, false))
+}
+
+func (s *Server) handleForceCCS1(w http.ResponseWriter, _ *http.Request) {
+	s.mu.Lock()
+	s.ForceHits++
+	o := s.opts
+	fail := s.failStatus
+	s.mu.Unlock()
+	if fail {
+		http.Error(w, "upstream error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.carStatusCCS1(o, true))
+}
+
+func (s *Server) handleLocationCCS1(w http.ResponseWriter, _ *http.Request) {
+	s.mu.Lock()
+	o := s.opts
+	s.mu.Unlock()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"retCode": "S",
+		"resMsg": map[string]any{
+			"gpsDetail": map[string]any{
+				"coord": map[string]any{"lat": o.Latitude, "lon": o.Longitude, "alt": 0},
+				"time":  "20260710063000",
+			},
+		},
+	})
+}
+
+// carStatusCCS1 builds a CCS1 status envelope from the current options, matching
+// the shape captured from a real Inster (resMsg.vehicleStatusInfo with an embedded
+// vehicleLocation). A forced read reports a fresher battery % like the CCS2 path.
+func (s *Server) carStatusCCS1(o Options, forced bool) map[string]any {
+	battery := o.BatteryPercent
+	statusTime := "20260710063000"
+	if forced {
+		battery += 1
+		statusTime = "20260710050000"
+	}
+	plugin := 0
+	if o.PluggedIn {
+		plugin = 1
+	}
+	vehicleStatus := map[string]any{
+		"doorLock": true,
+		"evStatus": map[string]any{
+			"batteryCharge": o.ChargeRemainMin > 0,
+			"batteryStatus": battery,
+			"batteryPlugin": plugin,
+			"remainTime2": map[string]any{
+				"atc":  map[string]any{"value": o.ChargeRemainMin, "unit": 1},
+				"etc3": map[string]any{"value": 42, "unit": 1},
+			},
+			"drvDistance": []map[string]any{{
+				"rangeByFuel": map[string]any{
+					"totalAvailableRange": map[string]any{"value": o.RangeKM, "unit": 1},
+				},
+				"type": 2,
+			}},
+			"reservChargeInfos": map[string]any{
+				"targetSOClist": []map[string]any{
+					{"targetSOClevel": 100, "plugType": 0},
+					{"targetSOClevel": 80, "plugType": 1},
+				},
+			},
+		},
+		"tirePressureLamp": map[string]any{"tirePressureLampAll": 0},
+		"battery":          map[string]any{"batSoc": 87},
+		"time":             statusTime,
+	}
+	return map[string]any{
+		"retCode": "S",
+		"resMsg": map[string]any{
+			"vehicleStatusInfo": map[string]any{
+				"vehicleLocation": map[string]any{
+					"coord": map[string]any{"lat": o.Latitude, "lon": o.Longitude, "alt": 0},
+					"time":  statusTime,
+				},
+				"vehicleStatus": vehicleStatus,
+				"odometer":      map[string]any{"value": 4213.5, "unit": 1},
+			},
+		},
+	}
 }
 
 // carStatus builds a CCS2 status envelope from the current options. A forced
