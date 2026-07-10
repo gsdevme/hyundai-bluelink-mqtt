@@ -248,6 +248,14 @@ func (c *Client) SelectVehicle(ctx context.Context) (Vehicle, error) {
 	return Vehicle{}, fmt.Errorf("bluelink: no vehicle with VIN %s", c.vin)
 }
 
+// DebugGet performs an authenticated SPA GET against relPath (relative to the API
+// base) and returns the raw response body, reusing the normal auth/refresh, stamp
+// and header machinery. It backs the hidden `dump` command used to capture raw
+// API responses when adding protocol support; it is not used by the daemon.
+func (c *Client) DebugGet(ctx context.Context, v Vehicle, relPath string) ([]byte, error) {
+	return c.doAuthedGet(ctx, relPath, v.CCS2ProtocolSupport)
+}
+
 // authedGet performs an authenticated SPA GET, decoding resMsg-bearing JSON into
 // out. It refreshes the token once on a 401 and retries.
 func (c *Client) authedGet(ctx context.Context, path string, ccs2Support int, out any) error {

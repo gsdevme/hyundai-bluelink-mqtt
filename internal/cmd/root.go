@@ -41,6 +41,7 @@ func Execute() error {
 func init() {
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(mockCmd)
+	rootCmd.AddCommand(dumpCmd)
 }
 
 // newLogger builds a slog logger from level/format strings.
