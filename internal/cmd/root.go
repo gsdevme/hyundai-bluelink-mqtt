@@ -3,8 +3,11 @@
 package cmd
 
 import (
+	"context"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -27,9 +30,12 @@ var rootCmd = &cobra.Command{
 }
 
 // Execute runs the root command, returning any error for main to report and to
-// map to a non-zero exit code.
+// map to a non-zero exit code. Signal handling is installed once here so every
+// subcommand receives a context cancelled on SIGTERM/SIGINT via cmd.Context().
 func Execute() error {
-	return rootCmd.Execute()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+	return rootCmd.ExecuteContext(ctx)
 }
 
 func init() {

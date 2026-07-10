@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os/signal"
-	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -29,9 +27,6 @@ var mockCmd = &cobra.Command{
 			return fmt.Errorf("build mock: %w", err)
 		}
 
-		ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGTERM, syscall.SIGINT)
-		defer stop()
-
 		logger.Info("mock Bluelink API listening", "addr", mockAddr)
 		httpSrv := &http.Server{Addr: mockAddr, Handler: srv.Handler()}
 
@@ -47,7 +42,7 @@ var mockCmd = &cobra.Command{
 		select {
 		case err := <-serveErr:
 			return err
-		case <-ctx.Done():
+		case <-cmd.Context().Done():
 			logger.Info("shutting down mock")
 			if err := shutdownServer(httpSrv); err != nil {
 				return err

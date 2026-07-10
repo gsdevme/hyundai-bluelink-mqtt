@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -28,17 +26,13 @@ var serveCmd = &cobra.Command{
 	},
 }
 
-func runServe(parent context.Context) error {
+func runServe(ctx context.Context) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("config: %w", err)
 	}
 	logger := newLogger(cfg.LogLevel, cfg.LogFormat)
 	logger.Info("starting", "config", cfg.String())
-
-	// Root context cancelled on SIGTERM/SIGINT.
-	ctx, stop := signal.NotifyContext(parent, syscall.SIGTERM, syscall.SIGINT)
-	defer stop()
 
 	// Health server listens immediately so probes work during init.
 	hz := health.New(cfg.ReadyFailureThreshold)
