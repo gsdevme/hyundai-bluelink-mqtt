@@ -1,0 +1,11 @@
+{
+  "retCode": "S",
+  "resCode": "0000",
+  "msgId": "test-location",
+  "resMsg": {
+    "coord": { "lat": 51.507351, "lon": -0.127758, "alt": 0, "type": 0 },
+    "head": 0,
+    "speed": { "value": 0, "unit": 1 },
+    "time": "20260710063000"
+  }
+}

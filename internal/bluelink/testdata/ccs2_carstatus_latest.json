@@ -1,0 +1,66 @@
+{
+  "retCode": "S",
+  "resCode": "0000",
+  "msgId": "test-cached",
+  "resMsg": {
+    "state": {
+      "Vehicle": {
+        "Date": "2026-07-10T06:30:00Z",
+        "DrivingReady": 0,
+        "Drivetrain": {
+          "Odometer": 4213.5,
+          "FuelSystem": {
+            "DTE": { "Total": 268.0, "Unit": 1 }
+          }
+        },
+        "Electronics": {
+          "Battery": { "Level": 87, "SensorReliability": 0 },
+          "FOB": { "LowBattery": 0 }
+        },
+        "Green": {
+          "BatteryManagement": {
+            "BatteryRemain": { "Ratio": 62.0, "Value": 39.2 },
+            "BatteryCapacity": { "Value": 42.0 },
+            "SoH": { "Ratio": 99.0 }
+          },
+          "ChargingInformation": {
+            "Charging": { "RemainTime": 145 },
+            "EstimatedTime": { "Quick": 42, "Standard": 320, "ICCB": 600 },
+            "ConnectorFastening": { "State": 1 },
+            "ElectricCurrentLevel": { "State": 2 },
+            "TargetSoC": { "Standard": 80, "Quick": 100 }
+          },
+          "ChargingDoor": { "State": 1 },
+          "Electric": {
+            "SmartGrid": { "RealTimePower": 7.2 }
+          }
+        },
+        "Cabin": {
+          "HVAC": {
+            "OutsideTemperature": { "Value": 18.5, "Unit": 0 },
+            "Row1": {
+              "Driver": { "Temperature": { "Value": 21.0, "Unit": 0 } }
+            }
+          },
+          "Door": {
+            "Row1": { "Driver": { "Lock": 0 }, "Passenger": { "Lock": 0 } },
+            "Row2": { "Left": { "Lock": 0 }, "Right": { "Lock": 0 } }
+          }
+        },
+        "Chassis": {
+          "Axle": {
+            "Tire": { "PressureLow": 0 },
+            "Row1": {
+              "Left": { "Tire": { "PressureLow": 0 } },
+              "Right": { "Tire": { "PressureLow": 0 } }
+            },
+            "Row2": {
+              "Left": { "Tire": { "PressureLow": 0 } },
+              "Right": { "Tire": { "PressureLow": 0 } }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "retCode": "S",
+  "resCode": "0000",
+  "msgId": "test-vehicles",
+  "resMsg": {
+    "vehicles": [
+      {
+        "vehicleId": "TEST-VEHICLE-ID-0001",
+        "nickname": "Inster",
+        "vehicleName": "INSTER",
+        "regDate": "2026-01-15T00:00:00",
+        "vin": "REDACTEDVIN000001",
+        "type": "EV",
+        "ccuCCS2ProtocolSupport": 1
+      }
+    ]
+  }
+}

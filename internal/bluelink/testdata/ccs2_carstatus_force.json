@@ -1,0 +1,55 @@
+{
+  "retCode": "S",
+  "resCode": "0000",
+  "msgId": "test-force",
+  "resMsg": {
+    "state": {
+      "Vehicle": {
+        "Date": "2026-07-10T05:00:00Z",
+        "DrivingReady": 0,
+        "Drivetrain": {
+          "Odometer": 4213.5,
+          "FuelSystem": {
+            "DTE": { "Total": 291.0, "Unit": 1 }
+          }
+        },
+        "Electronics": {
+          "Battery": { "Level": 88, "SensorReliability": 0 }
+        },
+        "Green": {
+          "BatteryManagement": {
+            "BatteryRemain": { "Ratio": 68.0 },
+            "SoH": { "Ratio": 99.0 }
+          },
+          "ChargingInformation": {
+            "Charging": { "RemainTime": 118 },
+            "EstimatedTime": { "Quick": 38, "Standard": 300, "ICCB": 560 },
+            "ConnectorFastening": { "State": 1 },
+            "TargetSoC": { "Standard": 80, "Quick": 100 }
+          },
+          "ChargingDoor": { "State": 1 },
+          "Electric": {
+            "SmartGrid": { "RealTimePower": 7.1 }
+          }
+        },
+        "Cabin": {
+          "HVAC": {
+            "OutsideTemperature": { "Value": 16.0, "Unit": 0 },
+            "Row1": {
+              "Driver": { "Temperature": { "Value": 21.0, "Unit": 0 } }
+            }
+          },
+          "Door": {
+            "Row1": { "Driver": { "Lock": 0 }, "Passenger": { "Lock": 0 } },
+            "Row2": { "Left": { "Lock": 0 }, "Right": { "Lock": 0 } }
+          }
+        },
+        "Chassis": {
+          "Axle": {
+            "Tire": { "PressureLow": 0 }
+          }
+        }
+      }
+    }
+  }
+}
