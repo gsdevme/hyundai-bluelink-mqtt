@@ -3,6 +3,7 @@ package bluelink
 import (
 	"crypto/rsa"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -29,12 +30,12 @@ func jwkToRSAPublicKey(jwk rsaJWK) (*rsa.PublicKey, error) {
 		return nil, fmt.Errorf("decode JWK exponent: %w", err)
 	}
 	if len(nBytes) == 0 || len(eBytes) == 0 {
-		return nil, fmt.Errorf("JWK missing modulus or exponent")
+		return nil, errors.New("JWK missing modulus or exponent")
 	}
 	n := new(big.Int).SetBytes(nBytes)
 	e := new(big.Int).SetBytes(eBytes)
 	if !e.IsInt64() || e.Int64() > 1<<31-1 {
-		return nil, fmt.Errorf("JWK exponent out of range")
+		return nil, errors.New("JWK exponent out of range")
 	}
 	return &rsa.PublicKey{N: n, E: int(e.Int64())}, nil
 }

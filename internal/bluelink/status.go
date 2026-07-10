@@ -2,6 +2,7 @@ package bluelink
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -42,7 +43,7 @@ func (c *Client) fetchStatus(ctx context.Context, v Vehicle, force bool) (Vehicl
 		return VehicleState{}, fmt.Errorf("fetch status: %w", err)
 	}
 	if out.ResMsg.State.Vehicle == nil {
-		return VehicleState{}, fmt.Errorf("status response missing resMsg.state.Vehicle")
+		return VehicleState{}, errors.New("status response missing resMsg.state.Vehicle")
 	}
 
 	state := parseCCS2(out.ResMsg.State.Vehicle)

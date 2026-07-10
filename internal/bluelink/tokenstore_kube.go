@@ -3,6 +3,7 @@ package bluelink
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -32,7 +33,7 @@ type kubeSecretStore struct {
 // in-cluster config and the mounted ServiceAccount namespace.
 func NewKubeSecretStore(name string) (TokenStore, error) {
 	if name == "" {
-		return nil, fmt.Errorf("kube token store: secret name required")
+		return nil, errors.New("kube token store: secret name required")
 	}
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
@@ -56,7 +57,7 @@ func readNamespace() (string, error) {
 	}
 	ns := strings.TrimSpace(string(b))
 	if ns == "" {
-		return "", fmt.Errorf("serviceaccount namespace is empty")
+		return "", errors.New("serviceaccount namespace is empty")
 	}
 	return ns, nil
 }
@@ -102,5 +103,5 @@ func (k *kubeSecretStore) Save(ctx context.Context, t Tokens) error {
 		}
 		return fmt.Errorf("update token secret: %w", err)
 	}
-	return fmt.Errorf("update token secret: exhausted retries")
+	return errors.New("update token secret: exhausted retries")
 }

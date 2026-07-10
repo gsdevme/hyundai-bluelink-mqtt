@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os/signal"
@@ -43,7 +44,7 @@ func runServe(parent context.Context) error {
 	hz := health.New(cfg.ReadyFailureThreshold)
 	healthSrv := &http.Server{Addr: cfg.HealthAddr, Handler: hz.Handler()}
 	go func() {
-		if err := healthSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := healthSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("health server error", "err", err)
 		}
 	}()

@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -53,7 +54,7 @@ type Client struct {
 // New builds a Client from cfg, applying defaults and validating required fields.
 func New(cfg Config) (*Client, error) {
 	if cfg.Username == "" || cfg.Password == "" {
-		return nil, fmt.Errorf("bluelink: username and password are required")
+		return nil, errors.New("bluelink: username and password are required")
 	}
 	loginHost := cfg.LoginHost
 	if loginHost == "" {
@@ -185,7 +186,7 @@ func (c *Client) registerDevice(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("decode register response: %w", err)
 	}
 	if out.ResMsg.DeviceID == "" {
-		return "", fmt.Errorf("register response missing deviceId")
+		return "", errors.New("register response missing deviceId")
 	}
 	return out.ResMsg.DeviceID, nil
 }
@@ -234,7 +235,7 @@ func (c *Client) SelectVehicle(ctx context.Context) (Vehicle, error) {
 		return Vehicle{}, err
 	}
 	if len(vehicles) == 0 {
-		return Vehicle{}, fmt.Errorf("bluelink: no vehicles on account")
+		return Vehicle{}, errors.New("bluelink: no vehicles on account")
 	}
 	if c.vin == "" {
 		return vehicles[0], nil

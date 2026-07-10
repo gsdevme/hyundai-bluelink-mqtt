@@ -256,7 +256,7 @@ func (c *Client) postToken(ctx context.Context, hc *http.Client, form url.Values
 		return tokenResponse{}, fmt.Errorf("decode token response: %w", err)
 	}
 	if tr.AccessToken == "" {
-		return tokenResponse{}, fmt.Errorf("token response missing access_token")
+		return tokenResponse{}, errors.New("token response missing access_token")
 	}
 	return tr, nil
 }
