@@ -12,11 +12,11 @@ import (
 	"github.com/cucumber/godog"
 
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/bluelink"
-	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/health"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/homeassistant"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/mock"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/publisher"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/scheduler"
+	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/server"
 )
 
 // world holds per-scenario state.
@@ -31,7 +31,7 @@ type world struct {
 	client  *bluelink.Client
 	rec     *publisher.RecordingPublisher
 	pub     *publisher.Service
-	health  *health.Health
+	status  *server.Server
 	sched   *scheduler.Scheduler
 	haCfg   homeassistant.Config
 	vehicle bluelink.Vehicle
@@ -127,7 +127,7 @@ func (w *world) serviceStartsUp() error {
 	}
 	w.rec = publisher.NewRecordingPublisher()
 	w.pub = publisher.New(w.rec, w.haCfg)
-	w.health = health.New(3)
+	w.status = server.New(server.Config{ReadyFailureThreshold: 3})
 
 	if err := w.pub.PublishDiscovery(w.ctx); err != nil {
 		return err
@@ -136,7 +136,7 @@ func (w *world) serviceStartsUp() error {
 		return err
 	}
 
-	w.sched = scheduler.New(w.client, w.pub, w.health, scheduler.Config{
+	w.sched = scheduler.New(w.client, w.pub, w.status, scheduler.Config{
 		Vehicle:                v,
 		PollInterval:           1000 * time.Hour,
 		MaxRetries:             0, // fail fast in acceptance tests
@@ -273,8 +273,8 @@ func (w *world) forceCalled(want bool) error {
 }
 
 func (w *world) readiness(ready bool) error {
-	if w.health.Ready() != ready {
-		return fmt.Errorf("readiness = %v, want %v", w.health.Ready(), ready)
+	if w.status.Ready() != ready {
+		return fmt.Errorf("readiness = %v, want %v", w.status.Ready(), ready)
 	}
 	return nil
 }

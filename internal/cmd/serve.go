@@ -11,11 +11,11 @@ import (
 
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/bluelink"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/config"
-	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/health"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/homeassistant"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/mqtt"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/publisher"
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/scheduler"
+	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/server"
 )
 
 var serveCmd = &cobra.Command{
@@ -34,9 +34,16 @@ func runServe(ctx context.Context) error {
 	logger := newLogger(cfg.LogLevel, cfg.LogFormat)
 	logger.Info("starting", "config", cfg.String())
 
-	// Health server listens immediately so probes work during init.
-	hz := health.New(cfg.ReadyFailureThreshold)
-	healthSrv := &http.Server{Addr: cfg.HealthAddr, Handler: hz.Handler()}
+	// Status/health server listens immediately so probes work during init.
+	status := server.New(server.Config{
+		ReadyFailureThreshold: cfg.ReadyFailureThreshold,
+		PollInterval:          cfg.PollInterval,
+		ForceEnabled:          cfg.ForceRefreshEnabled,
+		ForceHour:             cfg.ForceRefreshHour,
+		ForceMinute:           cfg.ForceRefreshMinute,
+		ForceLocation:         cfg.ForceRefreshLocation,
+	})
+	healthSrv := &http.Server{Addr: cfg.HealthAddr, Handler: status.Handler()}
 	healthErr := make(chan error, 1)
 	go func() {
 		if err := healthSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -73,6 +80,7 @@ func runServe(ctx context.Context) error {
 		return fmt.Errorf("select vehicle: %w", err)
 	}
 	logger.Info("selected vehicle", "model", vehicle.Model, "ccs2", vehicle.IsCCS2())
+	status.SetVehicle(vehicle.Model, vehicle.Name, vehicle.VIN, vehicle.IsCCS2())
 	if !vehicle.IsCCS2() {
 		// Documented degradation: CCS1 is not implemented; idle without publishing.
 		logger.Warn("target vehicle is not CCS2; status publishing is not supported, idling")
@@ -124,7 +132,7 @@ func runServe(ctx context.Context) error {
 	}
 
 	// Scheduler.
-	sched := scheduler.New(client, pub, hz, scheduler.Config{
+	sched := scheduler.New(client, pub, status, scheduler.Config{
 		Vehicle:                vehicle,
 		PollInterval:           cfg.PollInterval,
 		MaxRetries:             cfg.PollMaxRetries,
