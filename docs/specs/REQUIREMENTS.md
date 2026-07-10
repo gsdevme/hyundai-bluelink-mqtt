@@ -83,16 +83,18 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-CF-04** Secrets redacted in logs/String(). → `config.go`
 - **REQ-CF-05** `godotenv` loads local `.env`; `.env.dist` template committed. → `cmd/root.go`, `.env.dist`
 
-## Lifecycle & health (`internal/health`, `cmd`, `main.go`)
+## Lifecycle & health (`internal/server`, `cmd`, `main.go`)
 
-- **REQ-LC-01** `/healthz` liveness always-ok while running. → `health.go`
-- **REQ-LC-02** `/readyz` ready after first successful publish. → `health.go`
+- **REQ-LC-01** `/healthz` liveness always-ok while running. → `internal/server`
+- **REQ-LC-02** `/readyz` ready after first successful publish. → `internal/server`
 - **REQ-LC-03** `/readyz` not-ready after `READY_FAILURE_THRESHOLD` consecutive
-  failures; recovers on success. → `health.go`, `scheduler.go`
+  failures; recovers on success. → `internal/server`, `scheduler.go`
 - **REQ-LC-04** Structured `log/slog` logging; level/format configurable; no secrets. → `cmd/root.go`
 - **REQ-LC-05** Graceful shutdown: explicit retained `offline` publish, clean
   `Disconnect()`, then exit. → `cmd/serve.go`
-- **REQ-LC-06** Health server listens during init so probes work at startup. → `cmd/serve.go`
+- **REQ-LC-06** Status/health server listens during init so probes work at startup. → `cmd/serve.go`
+- **REQ-LC-07** Root `/` HTML status page: service, readiness, uptime, vehicle
+  (VIN masked to last 4), schedule, Go version; always `200`, no secrets. → `internal/server`
 
 ## Tokens (`internal/bluelink/tokenstore.go`)
 

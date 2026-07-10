@@ -36,7 +36,8 @@ Deployed to Kubernetes (manifests live in a **separate repo**; none in this repo
 4. `internal/scheduler` polls **cached** status + location every `POLL_INTERVAL`
    (default 30m) and publishes a retained JSON state document; a daily **force**
    refresh runs at `FORCE_REFRESH_AT` (optionally gated on plugged-in).
-5. `internal/health` exposes `/healthz` (liveness) and `/readyz` (readiness).
+5. `internal/server` exposes an HTML status page on `/` plus `/healthz` (liveness)
+   and `/readyz` (readiness).
 6. On `SIGTERM`, publish `offline` availability (retained), `Disconnect()` cleanly,
    exit 0.
 

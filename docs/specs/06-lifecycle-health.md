@@ -1,8 +1,10 @@
 # 06 — Lifecycle & health
 
-## HTTP probes (`internal/health`)
+## HTTP surface (`internal/server`)
 
-A stdlib `net/http` server on `HEALTH_ADDR` (default `:8080`) exposes:
+A stdlib `net/http` server on `HEALTH_ADDR` (default `:8080`) owns all routes via a
+single `addRoutes` table (mirroring `internal/mock`). It exposes a human-friendly
+status page on `/` alongside the Kubernetes probes:
 
 - `GET /healthz` — **liveness**. Returns `200 OK` while the process is running and the
   HTTP server is up. It does not depend on MQTT or the Bluelink API (a liveness probe
@@ -17,6 +19,24 @@ A stdlib `net/http` server on `HEALTH_ADDR` (default `:8080`) exposes:
 
 Readiness state is a small concurrency-safe object updated by the scheduler/publisher
 and read by the handler.
+
+### `GET /` — status page
+
+Returns an HTML page (`text/html`, always `200`) intended for humans glancing at the
+running service. It renders, from a concurrency-safe snapshot:
+
+- service name and readiness (ready / not ready);
+- uptime (`time.Since(startedAt)`, rounded to the second);
+- selected vehicle — model, nickname, CCS2 flag, and the **VIN masked to its last 4**
+  (rendered as "initialising" until vehicle selection completes, since the server
+  listens before selection);
+- schedule — poll interval and the daily force-refresh time + location (or "disabled");
+- the Go runtime version.
+
+The page shares `HEALTH_ADDR` with the probes and **never exposes credentials**. The
+markup lives in `internal/server/page.go` via `html/template`, isolated so styling
+(htmx, CSS) can be iterated on later. Unknown paths (`/` is registered as `GET /{$}`)
+return `404`.
 
 ### Threshold vs poll interval & restart policy
 
@@ -35,7 +55,7 @@ vehicle id (not VIN in full where avoidable) and outcome.
 ## Startup sequence
 
 1. Parse+validate config (exit non-zero on error).
-2. Build logger, health server (listening immediately so probes work during init).
+2. Build logger, status/health server (listening immediately so probes work during init).
 3. Init `TokenStore`; restore tokens or perform headless login + device registration.
 4. List vehicles, select target, record CCS protocol; refuse to start only on fatal
    auth/config errors (a CCS1-only vehicle logs a warning and the service idles without
@@ -50,7 +70,7 @@ vehicle id (not VIN in full where avoidable) and outcome.
    the device unavailable immediately rather than waiting for LWT/keepalive.
 3. `Disconnect()` the MQTT client cleanly (this suppresses the LWT — the explicit
    publish is the intended signal).
-4. Shut down the health HTTP server.
+4. Shut down the status/health HTTP server.
 5. Persist the latest tokens if dirty.
 6. Exit `0` within the shutdown grace period.
 

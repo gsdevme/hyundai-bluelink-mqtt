@@ -31,8 +31,12 @@ All via environment variables (a local `.env` is loaded automatically). See
 [`docs/specs/05-config.md`](docs/specs/05-config.md). Required:
 `BLUELINK_USERNAME`, `BLUELINK_PASSWORD`, `MQTT_BROKER_URL`.
 
-## Health
+## Status & health
 
+Served by `internal/server` on `HEALTH_ADDR` (default `:8080`):
+
+- `GET /` — HTML status page (service, readiness, uptime, selected vehicle with the
+  VIN masked to its last 4, schedule, Go version). Never shows credentials.
 - `GET /healthz` — liveness (always OK while running).
 - `GET /readyz` — readiness (ready after first successful publish; not-ready after
   `READY_FAILURE_THRESHOLD` consecutive poll failures).
