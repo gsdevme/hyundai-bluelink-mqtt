@@ -9,7 +9,8 @@ in a separate repo).
   godotenv, client-go, godog (test-only).
 - **Read-only** — no remote commands. Regular polling reads **cached** state only and
   never wakes the car; an optional daily force-refresh wakes it once.
-- **CCS2** protocol (Inster is E-GMP-class); CCS1 is a documented stub.
+- **CCS2 and CCS1** protocols; the vehicle's `ccuCCS2ProtocolSupport` selects the parser
+  and both publish the same state.
 
 See [`docs/specs/`](docs/specs) for the full design and
 [`docs/specs/REQUIREMENTS.md`](docs/specs/REQUIREMENTS.md) for traceable requirement IDs.

@@ -23,8 +23,9 @@ Deployed to Kubernetes (manifests live in a **separate repo**; none in this repo
   Waking the car (a force refresh) happens at most once per day on a schedule.
 - **Kube-friendly.** HTTP health/readiness probes, env-based config, structured
   logging (`log/slog`), graceful shutdown, non-root minimal (distroless) image.
-- **CCS2 first, CCS1 pluggable.** The Inster is E-GMP-class and speaks **CCS2**.
-  Status parsing is isolated per protocol; a CCS1 stub marks the decision point.
+- **CCS2 and CCS1 both supported.** Vehicles report their protocol via
+  `ccuCCS2ProtocolSupport` (newer report CCS2, older report CCS1). Status parsing is
+  isolated per protocol; both map into the same `VehicleState` and publish identically.
 
 ## High-level flow
 

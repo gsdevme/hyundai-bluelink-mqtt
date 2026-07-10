@@ -26,9 +26,14 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-BL-12** Park location `GET location/park`; overrides embedded stale location. → `status.go`
 - **REQ-BL-13** Authenticated SPA headers on every call (Authorization, service-id,
   application-id, Stamp, device-id, Ccuccs2protocolsupport, Host, UA). → `client.go`
-- **REQ-BL-14** Protocol branch on `ccuCCS2ProtocolSupport`: CCS2 parse, or CCS1 warn +
-  degrade. → `status.go`, `parse_ccs1.go`
+- **REQ-BL-14** Protocol branch on `ccuCCS2ProtocolSupport`: `!= 0` → CCS2
+  (`fetchStatus`), `== 0` → CCS1 (`fetchStatusCCS1`). Both map into `VehicleState` and
+  publish identically. → `status.go`, `parse_ccs1.go`
 - **REQ-BL-15** Read-only: no control/command endpoints or control-token flow exist.
+- **REQ-BL-16** CCS1 cached status `GET vehicles/{id}/status/latest` (no wake) and force
+  status `GET vehicles/{id}/status` (wakes car); envelope
+  `resMsg.vehicleStatusInfo.{vehicleStatus, vehicleLocation, odometer}`, with location
+  embedded (no separate location call). → `status.go`
 
 ## Domain model (`internal/bluelink`)
 
@@ -42,7 +47,9 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-DM-07** Distance/temperature unit index normalisation (km/mi, °C). → `parse_ccs2.go`
 - **REQ-DM-08** Lock = AND of door locks; tire warning = OR of per-axle + all flags. → `parse_ccs2.go`
 - **REQ-DM-09** Safe dotted-path lookup that never panics on absent keys. → `parse_ccs2.go`
-- **REQ-DM-10** CCS1 parse stub returns `ErrCCS1NotImplemented`. → `parse_ccs1.go`
+- **REQ-DM-10** CCS1 → `VehicleState` mapping at full parity, reusing the CCS2 path
+  helpers; fields CCS1 does not expose (SoH, charge-port door, charging power, measured
+  temperatures) stay `nil`. → `parse_ccs1.go`
 
 ## MQTT & Home Assistant (`internal/mqtt`, `internal/homeassistant`, `internal/publisher`)
 

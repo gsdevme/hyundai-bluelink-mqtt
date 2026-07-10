@@ -58,8 +58,7 @@ vehicle id (not VIN in full where avoidable) and outcome.
 2. Build logger, status/health server (listening immediately so probes work during init).
 3. Init `TokenStore`; restore tokens or perform headless login + device registration.
 4. List vehicles, select target, record CCS protocol; refuse to start only on fatal
-   auth/config errors (a CCS1-only vehicle logs a warning and the service idles without
-   publishing state — documented degradation).
+   auth/config errors. Both CCS2 and CCS1 vehicles run the full publish pipeline.
 5. Connect MQTT (with LWT), publish discovery configs (retained).
 6. Start scheduler (immediate first cached poll).
 

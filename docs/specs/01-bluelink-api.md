@@ -95,6 +95,19 @@ first release but the client should surface the error clearly.
 ## Protocol selection (runtime)
 
 Branch on `ccuCCS2ProtocolSupport` from the vehicle list:
-- `!= 0` → **CCS2** (`parse_ccs2.go`). The Inster reports CCS2.
-- `== 0` → **CCS1**: log a warning and **degrade** (no state published);
-  `parse_ccs1.go` is a stub. The decision point exists so CCS1 can be added later.
+- `!= 0` → **CCS2** (`parse_ccs2.go`, `fetchStatus`). Newer E-GMP vehicles report CCS2.
+- `== 0` → **CCS1** (`parse_ccs1.go`, `fetchStatusCCS1`). Older vehicles (including some
+  Insters) report CCS1. Both protocols map into the same `VehicleState` and run the full
+  publish pipeline; the two parsers stay isolated as siblings.
+
+### CCS1 endpoints
+
+| Purpose | Endpoint | Key fields |
+|---|---|---|
+| Cached status (no wake) | `GET vehicles/{id}/status/latest` | `resMsg.vehicleStatusInfo.{vehicleStatus, vehicleLocation, odometer}` |
+| Force status (wakes car) | `GET vehicles/{id}/status` | same shape as above |
+| Location | `GET vehicles/{id}/location` | `resMsg.gpsDetail.coord.{lat,lon}` |
+
+Unlike CCS2, the CCS1 status response embeds a **fresh** `vehicleLocation`, so
+`fetchStatusCCS1` reads location from the status document and does not make a separate
+location call.

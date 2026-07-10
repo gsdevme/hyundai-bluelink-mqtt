@@ -73,5 +73,25 @@ The snapshot published to MQTT. Pointer/`*T` fields (or an `Optional[T]`) distin
 
 ## CCS1
 
-`parse_ccs1.go` is a stub (`ErrCCS1NotImplemented`). The Inster is CCS2, so CCS1 is not
-implemented; the branch and error exist as the documented extension point.
+`parse_ccs1.go` maps a CCS1 status document (`resMsg.vehicleStatusInfo`) into the same
+`VehicleState`, reusing the CCS2 path helpers. Key mappings:
+
+| VehicleState field | CCS1 path |
+|---|---|
+| EVBatteryPercentage | `vehicleStatus.evStatus.batteryStatus` |
+| EVRange / Unit | `vehicleStatus.evStatus.drvDistance[0].rangeByFuel.totalAvailableRange.value`/`.unit` |
+| Charging | `vehicleStatus.evStatus.batteryCharge` (bool, direct) |
+| PluggedIn | `vehicleStatus.evStatus.batteryPlugin` (`!= 0`) |
+| ChargeLimitDC / AC | `vehicleStatus.evStatus.reservChargeInfos.targetSOClist[]` by `plugType` (0 → DC, 1 → AC) |
+| EstChargeDurationMin | `vehicleStatus.evStatus.remainTime2.atc.value` |
+| EstFastChargeDurationMin | `vehicleStatus.evStatus.remainTime2.etc3.value` |
+| Battery12VPercentage | `vehicleStatus.battery.batSoc` (range guard only; no reliability flag) |
+| Odometer / Unit | `odometer.value` / `odometer.unit` |
+| Locked | `vehicleStatus.doorLock` (bool, direct) |
+| TirePressureWarning | OR of `vehicleStatus.tirePressureLamp.*` |
+| Lat / Lon / LocationUpdatedAt | embedded `vehicleLocation.coord` + `.time` |
+| LastUpdatedAt | `vehicleStatus.time` |
+
+Fields CCS1 does not expose stay `nil`: battery SoH, charge-port door, real-time charging
+power, and measured cabin/outside temperatures (CCS1's `airTemp` is a hex-encoded climate
+setpoint, not a reading). The pointer design renders these "unknown" in Home Assistant.
