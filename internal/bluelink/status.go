@@ -7,24 +7,22 @@ import (
 	"time"
 )
 
-// CachedStatus fetches the latest cached CCS2 status plus park location. It never
-// wakes the car.
+// CachedStatus fetches the latest cached status (CCS2 or CCS1, per the vehicle's
+// protocol) plus location. It never wakes the car.
 func (c *Client) CachedStatus(ctx context.Context, v Vehicle) (VehicleState, error) {
 	return c.fetchStatus(ctx, v, false)
 }
 
-// ForceStatus fetches a forced CCS2 status plus park location. This wakes the car
-// and should be used sparingly (the scheduled daily refresh).
+// ForceStatus fetches a forced status (CCS2 or CCS1, per the vehicle's protocol)
+// plus location. This wakes the car and should be used sparingly (the scheduled
+// daily refresh).
 func (c *Client) ForceStatus(ctx context.Context, v Vehicle) (VehicleState, error) {
 	return c.fetchStatus(ctx, v, true)
 }
 
 func (c *Client) fetchStatus(ctx context.Context, v Vehicle, force bool) (VehicleState, error) {
 	if !v.IsCCS2() {
-		// Decision point for future CCS1 support (see parse_ccs1.go).
-		c.logger.WarnContext(ctx, "vehicle uses CCS1 protocol; status parsing not implemented, degrading",
-			"vehicle_id", v.ID, "ccs2_support", v.CCS2ProtocolSupport)
-		return VehicleState{}, ErrCCS1NotImplemented
+		return c.fetchStatusCCS1(ctx, v, force)
 	}
 
 	path := "vehicles/" + v.ID + "/ccs2/carstatus/latest"
@@ -56,6 +54,30 @@ func (c *Client) fetchStatus(ctx context.Context, v Vehicle, force bool) (Vehicl
 		state.Latitude, state.Longitude, state.LocationUpdatedAt = lat, lon, ts
 	}
 	return state, nil
+}
+
+// fetchStatusCCS1 is the CCS1 sibling of the CCS2 path in fetchStatus. It reads
+// the cached or forced status document and maps it via parseCCS1. Unlike CCS2,
+// the CCS1 response embeds a fresh vehicleLocation, so no separate location call
+// is needed.
+func (c *Client) fetchStatusCCS1(ctx context.Context, v Vehicle, force bool) (VehicleState, error) {
+	path := "vehicles/" + v.ID + "/status/latest"
+	if force {
+		path = "vehicles/" + v.ID + "/status"
+	}
+
+	var out struct {
+		ResMsg struct {
+			VehicleStatusInfo map[string]any `json:"vehicleStatusInfo"`
+		} `json:"resMsg"`
+	}
+	if err := c.authedGet(ctx, path, v.CCS2ProtocolSupport, &out); err != nil {
+		return VehicleState{}, fmt.Errorf("fetch CCS1 status: %w", err)
+	}
+	if out.ResMsg.VehicleStatusInfo == nil {
+		return VehicleState{}, errors.New("CCS1 status response missing resMsg.vehicleStatusInfo")
+	}
+	return parseCCS1(out.ResMsg.VehicleStatusInfo)
 }
 
 // parkLocation fetches the cached park location (does not wake the car).

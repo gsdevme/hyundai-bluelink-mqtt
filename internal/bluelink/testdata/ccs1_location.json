@@ -1,0 +1,38 @@
+{
+  "retCode": "S",
+  "resCode": "0000",
+  "resMsg": {
+    "gpsDetail": {
+      "coord": {
+        "lat": 51.5,
+        "lon": -0.12,
+        "alt": 0,
+        "type": 0
+      },
+      "head": 0,
+      "speed": {
+        "value": 0,
+        "unit": 0
+      },
+      "accuracy": {
+        "hdop": 0,
+        "pdop": 0
+      },
+      "time": "20260710213950"
+    },
+    "drvDistance": {
+      "rangeByFuel": {
+        "evModeRange": {
+          "value": 122.40776699029126,
+          "unit": 3
+        },
+        "totalAvailableRange": {
+          "value": 122.40776699029126,
+          "unit": 3
+        }
+      },
+      "type": 2
+    }
+  },
+  "msgId": "00000000-0000-0000-0000-000000000001"
+}
