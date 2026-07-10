@@ -81,16 +81,6 @@ func runServe(ctx context.Context) error {
 	}
 	logger.Info("selected vehicle", "model", vehicle.Model, "ccs2", vehicle.IsCCS2())
 	status.SetVehicle(vehicle.Model, vehicle.Name, vehicle.VIN, vehicle.IsCCS2())
-	if !vehicle.IsCCS2() {
-		// Documented degradation: CCS1 is not implemented; idle without publishing.
-		logger.Warn("target vehicle is not CCS2; status publishing is not supported, idling")
-		select {
-		case err := <-healthErr:
-			return fmt.Errorf("health server: %w", err)
-		case <-ctx.Done():
-		}
-		return shutdownServer(healthSrv)
-	}
 
 	// Discovery config + MQTT connection (with LWT).
 	haCfg := homeassistant.Config{

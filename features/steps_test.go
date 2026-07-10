@@ -67,6 +67,11 @@ func (w *world) insterUnplugged() error {
 	return nil
 }
 
+func (w *world) insterCCS1() error {
+	w.opts.CCS2 = false
+	return nil
+}
+
 func (w *world) forceGatedOnPluggedIn() error {
 	w.forceGated = true
 	return nil
@@ -294,6 +299,7 @@ func TestFeatures(t *testing.T) {
 
 			ctx.Step(`^a charging, plugged-in Inster on the Bluelink account$`, w.chargingPluggedInster)
 			ctx.Step(`^the Inster is unplugged$`, w.insterUnplugged)
+			ctx.Step(`^the Inster speaks the CCS1 protocol$`, w.insterCCS1)
 			ctx.Step(`^force refresh is gated on being plugged in$`, w.forceGatedOnPluggedIn)
 			ctx.Step(`^a stored but expired access token with a valid refresh token$`, w.storedExpiredToken)
 

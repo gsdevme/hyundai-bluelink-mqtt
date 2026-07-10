@@ -21,6 +21,15 @@ Feature: Publish Inster metrics to MQTT with Home Assistant autodiscovery
     And the state topic reports plugged_in true
     And the readiness endpoint reports ready
 
+  Scenario: Publish state for a CCS1 vehicle
+    Given the Inster speaks the CCS1 protocol
+    When the service starts up
+    And a cached poll runs
+    Then the state topic reports battery 62
+    And the state topic reports charging true
+    And the state topic reports plugged_in true
+    And the readiness endpoint reports ready
+
   Scenario: Refresh the access token when it has expired
     Given a stored but expired access token with a valid refresh token
     When the service starts up
