@@ -16,17 +16,20 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "hyundai-bluelink-mqtt",
 	Short: "Publish Hyundai Bluelink EV metrics to MQTT with Home Assistant autodiscovery",
+	// Handle error reporting and exit codes in main() instead: don't let cobra
+	// print the error or dump usage on runtime failures.
+	SilenceErrors: true,
+	SilenceUsage:  true,
 	PersistentPreRun: func(_ *cobra.Command, _ []string) {
 		// Load a local .env if present (no-op in production).
 		_ = godotenv.Load()
 	},
 }
 
-// Execute runs the root command.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
-	}
+// Execute runs the root command, returning any error for main to report and to
+// map to a non-zero exit code.
+func Execute() error {
+	return rootCmd.Execute()
 }
 
 func init() {
