@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -trimpath -ldflags "-s -w" \
-    -o /out/hyundai-bluelink-mqtt .
+    -o /out/hyundai-bluelink-mqtt ./cmd
 
 # --- runtime stage ---
 FROM gcr.io/distroless/static:nonroot

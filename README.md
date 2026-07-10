@@ -17,9 +17,9 @@ See [`docs/specs/`](docs/specs) for the full design and
 ## Quick start (local)
 
 ```sh
-cp .env.dist .env      # fill in real Bluelink + MQTT values
-go run . serve         # poll -> MQTT service
-go run . mock --addr :8090   # standalone mock Bluelink API
+cp .env.dist .env            # fill in real Bluelink + MQTT values
+go run ./cmd serve           # poll -> MQTT service
+go run ./cmd mock --addr :8090   # standalone mock Bluelink API
 ```
 
 Point `BLUELINK_BASE_URL`/`BLUELINK_LOGIN_URL` at the mock to run the full pipeline
