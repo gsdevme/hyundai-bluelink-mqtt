@@ -80,7 +80,7 @@ func runServe(parent context.Context) error {
 		// Documented degradation: CCS1 is not implemented; idle without publishing.
 		logger.Warn("target vehicle is not CCS2; status publishing is not supported, idling")
 		<-ctx.Done()
-		return shutdownHealth(healthSrv)
+		return shutdownServer(healthSrv)
 	}
 
 	// Discovery config + MQTT connection (with LWT).
@@ -153,7 +153,7 @@ func runServe(parent context.Context) error {
 		logger.Warn("mqtt disconnect failed", "err", err)
 	}
 	<-schedDone
-	return shutdownHealth(healthSrv)
+	return shutdownServer(healthSrv)
 }
 
 func buildTokenStore(cfg *config.Config) (bluelink.TokenStore, error) {
@@ -165,7 +165,7 @@ func buildTokenStore(cfg *config.Config) (bluelink.TokenStore, error) {
 	}
 }
 
-func shutdownHealth(srv *http.Server) error {
+func shutdownServer(srv *http.Server) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	return srv.Shutdown(ctx)
