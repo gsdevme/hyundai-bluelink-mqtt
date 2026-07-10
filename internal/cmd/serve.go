@@ -37,10 +37,13 @@ func runServe(ctx context.Context) error {
 	// Health server listens immediately so probes work during init.
 	hz := health.New(cfg.ReadyFailureThreshold)
 	healthSrv := &http.Server{Addr: cfg.HealthAddr, Handler: hz.Handler()}
+	healthErr := make(chan error, 1)
 	go func() {
 		if err := healthSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("health server error", "err", err)
+			healthErr <- err
+			return
 		}
+		healthErr <- nil
 	}()
 
 	// Token store.
@@ -73,7 +76,11 @@ func runServe(ctx context.Context) error {
 	if !vehicle.IsCCS2() {
 		// Documented degradation: CCS1 is not implemented; idle without publishing.
 		logger.Warn("target vehicle is not CCS2; status publishing is not supported, idling")
-		<-ctx.Done()
+		select {
+		case err := <-healthErr:
+			return fmt.Errorf("health server: %w", err)
+		case <-ctx.Done():
+		}
 		return shutdownServer(healthSrv)
 	}
 
@@ -133,7 +140,11 @@ func runServe(ctx context.Context) error {
 	go func() { sched.Run(ctx); close(schedDone) }()
 
 	logger.Info("service running")
-	<-ctx.Done()
+	select {
+	case err := <-healthErr:
+		return fmt.Errorf("health server: %w", err)
+	case <-ctx.Done():
+	}
 	logger.Info("shutting down")
 
 	// Graceful shutdown: explicit offline, clean disconnect, stop everything.
