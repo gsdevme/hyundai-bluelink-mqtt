@@ -106,18 +106,11 @@ func (s *Server) Counts() (cached, force, register int, grants []string) {
 	return s.CachedHits, s.ForceHits, s.RegisterHits, append([]string(nil), s.Grants...)
 }
 
-// Handler returns the HTTP handler for the mock API.
+// Handler returns the HTTP handler for the mock API. See routes.go for the
+// route table.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /auth/api/v2/user/oauth2/authorize", s.handleAuthorize)
-	mux.HandleFunc("GET /auth/api/v1/accounts/certs", s.handleCerts)
-	mux.HandleFunc("POST /auth/account/signin", s.handleSignin)
-	mux.HandleFunc("POST /auth/api/v2/user/oauth2/token", s.handleToken)
-	mux.HandleFunc("POST /api/v1/spa/notifications/register", s.handleRegister)
-	mux.HandleFunc("GET /api/v1/spa/vehicles", s.handleVehicles)
-	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/ccs2/carstatus/latest", s.handleCached)
-	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/ccs2/carstatus", s.handleForce)
-	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/location/park", s.handleLocation)
+	addRoutes(mux, s)
 	return mux
 }
 
