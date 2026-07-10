@@ -94,6 +94,14 @@ func (s *Scheduler) Run(ctx context.Context) {
 	wg.Wait()
 }
 
+// PollNow runs a single cached poll cycle (fetch + publish + health). Exposed
+// for the acceptance suite; the timed loop uses the same underlying logic.
+func (s *Scheduler) PollNow(ctx context.Context) { s.poll(ctx) }
+
+// ForceNow runs a single force-refresh cycle, including the plugged-in gate.
+// Exposed for the acceptance suite.
+func (s *Scheduler) ForceNow(ctx context.Context) { s.forceRefresh(ctx) }
+
 func (s *Scheduler) pollLoop(ctx context.Context) {
 	s.poll(ctx) // immediate first poll
 	ticker := time.NewTicker(s.cfg.PollInterval)

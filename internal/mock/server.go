@@ -64,6 +64,17 @@ type Server struct {
 	RegisterHits int
 	CachedHits   int
 	ForceHits    int
+
+	// failStatus, when set, makes the status endpoints return HTTP 500.
+	failStatus bool
+}
+
+// SetFailStatus toggles whether status endpoints return HTTP 500 (for testing
+// graceful degradation).
+func (s *Server) SetFailStatus(fail bool) {
+	s.mu.Lock()
+	s.failStatus = fail
+	s.mu.Unlock()
 }
 
 // New builds a mock server with a fresh RSA key for the certs/signin flow.
@@ -188,7 +199,12 @@ func (s *Server) handleCached(w http.ResponseWriter, _ *http.Request) {
 	s.mu.Lock()
 	s.CachedHits++
 	o := s.opts
+	fail := s.failStatus
 	s.mu.Unlock()
+	if fail {
+		http.Error(w, "upstream error", http.StatusInternalServerError)
+		return
+	}
 	writeJSON(w, http.StatusOK, s.carStatus(o, false))
 }
 
@@ -196,7 +212,12 @@ func (s *Server) handleForce(w http.ResponseWriter, _ *http.Request) {
 	s.mu.Lock()
 	s.ForceHits++
 	o := s.opts
+	fail := s.failStatus
 	s.mu.Unlock()
+	if fail {
+		http.Error(w, "upstream error", http.StatusInternalServerError)
+		return
+	}
 	writeJSON(w, http.StatusOK, s.carStatus(o, true))
 }
 
