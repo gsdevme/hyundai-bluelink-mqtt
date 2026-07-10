@@ -112,3 +112,43 @@ func TestParseCCS1MissingVehicleStatus(t *testing.T) {
 		t.Error("expected an error when vehicleStatus is absent")
 	}
 }
+
+// TestParseCCS1ForceEnvelope verifies the force endpoint's distinct shape: resMsg
+// *is* the vehicleStatus (no vehicleStatusInfo wrapper, no odometer, no embedded
+// location). forceStatusCCS1 wraps it as {vehicleStatus: resMsg} before parsing.
+func TestParseCCS1ForceEnvelope(t *testing.T) {
+	data, err := os.ReadFile("testdata/ccs1_status_force.json")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	var env struct {
+		ResMsg map[string]any `json:"resMsg"`
+	}
+	if err := json.Unmarshal(data, &env); err != nil {
+		t.Fatalf("decode fixture: %v", err)
+	}
+	if _, wrapped := env.ResMsg["vehicleStatusInfo"]; wrapped {
+		t.Fatal("force response must not carry a vehicleStatusInfo wrapper")
+	}
+
+	s, err := parseCCS1(map[string]any{"vehicleStatus": env.ResMsg})
+	if err != nil {
+		t.Fatalf("parseCCS1: %v", err)
+	}
+	if got := f64(t, s.EVBatteryPercentage); got != 59.0 {
+		t.Errorf("battery = %v, want 59", got)
+	}
+	if s.Locked == nil || !*s.Locked {
+		t.Error("expected locked = true")
+	}
+	if s.Battery12VPercentage == nil || *s.Battery12VPercentage != 94 {
+		t.Errorf("12V = %v, want 94", s.Battery12VPercentage)
+	}
+	// The force endpoint carries no odometer or location.
+	if s.Odometer != nil {
+		t.Errorf("odometer = %v, want nil (absent from force response)", *s.Odometer)
+	}
+	if s.Latitude != nil || s.Longitude != nil {
+		t.Error("expected no embedded location in the force response")
+	}
+}

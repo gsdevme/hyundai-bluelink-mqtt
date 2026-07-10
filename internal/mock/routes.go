@@ -14,8 +14,8 @@ func addRoutes(mux *http.ServeMux, s *Server) {
 	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/ccs2/carstatus/latest", s.handleCached)
 	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/ccs2/carstatus", s.handleForce)
 	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/location/park", s.handleLocation)
-	// CCS1 surface (served for vehicles reporting ccuCCS2ProtocolSupport=0).
+	// CCS1 surface (served for vehicles reporting ccuCCS2ProtocolSupport=0). The
+	// force path resolves location via the protocol-aware /location/park handler.
 	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/status/latest", s.handleCachedCCS1)
 	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/status", s.handleForceCCS1)
-	mux.HandleFunc("GET /api/v1/spa/vehicles/{id}/location", s.handleLocationCCS1)
 }

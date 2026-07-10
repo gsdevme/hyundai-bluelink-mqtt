@@ -225,12 +225,18 @@ func (s *Server) handleLocation(w http.ResponseWriter, _ *http.Request) {
 	s.mu.Lock()
 	o := s.opts
 	s.mu.Unlock()
+	coord := map[string]any{"lat": o.Latitude, "lon": o.Longitude, "alt": 0}
+	if !o.CCS2 {
+		// CCS1 nests the fix under gpsDetail; CCS2 puts it directly in resMsg.
+		writeJSON(w, http.StatusOK, map[string]any{
+			"retCode": "S",
+			"resMsg":  map[string]any{"gpsDetail": map[string]any{"coord": coord, "time": "20260710063000"}},
+		})
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"retCode": "S",
-		"resMsg": map[string]any{
-			"coord": map[string]any{"lat": o.Latitude, "lon": o.Longitude, "alt": 0},
-			"time":  "20260710063000",
-		},
+		"resMsg":  map[string]any{"coord": coord, "time": "20260710063000"},
 	})
 }
 
@@ -262,24 +268,11 @@ func (s *Server) handleForceCCS1(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, s.carStatusCCS1(o, true))
 }
 
-func (s *Server) handleLocationCCS1(w http.ResponseWriter, _ *http.Request) {
-	s.mu.Lock()
-	o := s.opts
-	s.mu.Unlock()
-	writeJSON(w, http.StatusOK, map[string]any{
-		"retCode": "S",
-		"resMsg": map[string]any{
-			"gpsDetail": map[string]any{
-				"coord": map[string]any{"lat": o.Latitude, "lon": o.Longitude, "alt": 0},
-				"time":  "20260710063000",
-			},
-		},
-	})
-}
-
-// carStatusCCS1 builds a CCS1 status envelope from the current options, matching
-// the shape captured from a real Inster (resMsg.vehicleStatusInfo with an embedded
-// vehicleLocation). A forced read reports a fresher battery % like the CCS2 path.
+// carStatusCCS1 builds a CCS1 status envelope, matching the two distinct shapes a
+// real Inster returns: the cached endpoint nests vehicleStatus under
+// vehicleStatusInfo with an embedded vehicleLocation and odometer, while the force
+// endpoint returns vehicleStatus directly under resMsg (no wrapper, no location,
+// no odometer). A forced read reports a fresher battery % like the CCS2 path.
 func (s *Server) carStatusCCS1(o Options, forced bool) map[string]any {
 	battery := o.BatteryPercent
 	statusTime := "20260710063000"
@@ -317,6 +310,10 @@ func (s *Server) carStatusCCS1(o Options, forced bool) map[string]any {
 		"tirePressureLamp": map[string]any{"tirePressureLampAll": 0},
 		"battery":          map[string]any{"batSoc": 87},
 		"time":             statusTime,
+	}
+	if forced {
+		// Force endpoint: resMsg is the vehicleStatus itself.
+		return map[string]any{"retCode": "S", "resMsg": vehicleStatus}
 	}
 	return map[string]any{
 		"retCode": "S",

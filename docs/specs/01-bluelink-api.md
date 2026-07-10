@@ -102,12 +102,19 @@ Branch on `ccuCCS2ProtocolSupport` from the vehicle list:
 
 ### CCS1 endpoints
 
-| Purpose | Endpoint | Key fields |
+| Purpose | Endpoint | Envelope |
 |---|---|---|
 | Cached status (no wake) | `GET vehicles/{id}/status/latest` | `resMsg.vehicleStatusInfo.{vehicleStatus, vehicleLocation, odometer}` |
-| Force status (wakes car) | `GET vehicles/{id}/status` | same shape as above |
-| Location | `GET vehicles/{id}/location` | `resMsg.gpsDetail.coord.{lat,lon}` |
+| Force status (wakes car) | `GET vehicles/{id}/status` | `resMsg` **is** the `vehicleStatus` (no wrapper, no location, no odometer) |
+| Park location (no wake) | `GET vehicles/{id}/location/park` | `resMsg.gpsDetail.{coord,time}` |
 
-Unlike CCS2, the CCS1 status response embeds a **fresh** `vehicleLocation`, so
-`fetchStatusCCS1` reads location from the status document and does not make a separate
-location call.
+The two status endpoints return **different shapes**, so `fetchStatusCCS1` handles each
+separately and normalises both into the `vehicleStatusInfo` shape the parser expects:
+
+- **Cached** embeds a fresh `vehicleLocation` and `odometer`, so no extra call is needed.
+- **Force** carries neither, so location is resolved from the non-waking `/location/park`
+  endpoint (its `gpsDetail` shares `vehicleLocation`'s `{coord,time}` shape) and odometer
+  stays unknown until the next cached poll.
+
+Note the CCS1 `/location/park` nests the fix under `gpsDetail`, unlike CCS2's `/location/park`
+which puts `coord` directly in `resMsg`.

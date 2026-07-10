@@ -59,6 +59,9 @@ func TestCCS1StatusAgainstMock(t *testing.T) {
 	if got := f64(t, cached.Latitude); got != opts.Latitude {
 		t.Errorf("latitude = %v, want %v (from embedded vehicleLocation)", got, opts.Latitude)
 	}
+	if cached.Odometer == nil {
+		t.Error("expected cached odometer to be set (from vehicleStatusInfo.odometer)")
+	}
 
 	forced, err := client.ForceStatus(ctx, v)
 	if err != nil {
@@ -66,6 +69,14 @@ func TestCCS1StatusAgainstMock(t *testing.T) {
 	}
 	if got := f64(t, forced.EVBatteryPercentage); got != opts.BatteryPercent+1 {
 		t.Errorf("forced battery = %v, want %v", got, opts.BatteryPercent+1)
+	}
+	// The force endpoint omits odometer but location is resolved separately from
+	// the park endpoint.
+	if forced.Odometer != nil {
+		t.Errorf("forced odometer = %v, want nil (force endpoint omits it)", *forced.Odometer)
+	}
+	if got := f64(t, forced.Latitude); got != opts.Latitude {
+		t.Errorf("forced latitude = %v, want %v (from park location)", got, opts.Latitude)
 	}
 
 	cachedHits, forceHits, _, _ := m.Counts()

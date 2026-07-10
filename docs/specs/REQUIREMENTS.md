@@ -30,10 +30,12 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
   (`fetchStatus`), `== 0` → CCS1 (`fetchStatusCCS1`). Both map into `VehicleState` and
   publish identically. → `status.go`, `parse_ccs1.go`
 - **REQ-BL-15** Read-only: no control/command endpoints or control-token flow exist.
-- **REQ-BL-16** CCS1 cached status `GET vehicles/{id}/status/latest` (no wake) and force
-  status `GET vehicles/{id}/status` (wakes car); envelope
-  `resMsg.vehicleStatusInfo.{vehicleStatus, vehicleLocation, odometer}`, with location
-  embedded (no separate location call). → `status.go`
+- **REQ-BL-16** CCS1 cached status `GET vehicles/{id}/status/latest` (no wake, envelope
+  `resMsg.vehicleStatusInfo.{vehicleStatus, vehicleLocation, odometer}` with embedded
+  location) and force status `GET vehicles/{id}/status` (wakes car, `resMsg` *is* the
+  vehicleStatus with no wrapper/location/odometer). The force path resolves location from
+  `/location/park` (`resMsg.gpsDetail`); odometer stays nil until the next cached poll.
+  → `status.go`
 
 ## Domain model (`internal/bluelink`)
 
