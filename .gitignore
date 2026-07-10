@@ -1,0 +1,16 @@
+# Secrets / local env
+.env
+
+# Throwaway probe harness (quarantined; deleted after fixtures are captured)
+/_probe/
+
+# Build output
+/bin/
+/dist/
+*.out
+*.test
+
+# Editor / OS
+.DS_Store
+.idea/
+*.swp
