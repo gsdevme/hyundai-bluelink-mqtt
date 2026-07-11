@@ -27,12 +27,18 @@ type Entity struct {
 	InvertBool bool
 }
 
-// Entities returns the full catalogue published for a vehicle.
-func Entities() []Entity {
+// Entities returns the full catalogue published for a vehicle. distanceUnit sets
+// the Range sensor's HA label ("km" or "mi"); it defaults to "km" when empty. The
+// value is a label only — the car reports range in its own display unit and we
+// publish that number unconverted. (Odometer is always km as reported by the API.)
+func Entities(distanceUnit string) []Entity {
+	if distanceUnit == "" {
+		distanceUnit = "km"
+	}
 	return []Entity{
 		// Sensors.
 		{Component: Sensor, Key: "ev_battery_percentage", Name: "Battery", DeviceClass: "battery", StateClass: "measurement", Unit: "%"},
-		{Component: Sensor, Key: "ev_range", Name: "Range", DeviceClass: "distance", StateClass: "measurement", Unit: "km"},
+		{Component: Sensor, Key: "ev_range", Name: "Range", DeviceClass: "distance", StateClass: "measurement", Unit: distanceUnit},
 		{Component: Sensor, Key: "charging_power", Name: "Charging power", DeviceClass: "power", StateClass: "measurement", Unit: "kW"},
 		{Component: Sensor, Key: "battery_12v", Name: "12V battery", DeviceClass: "battery", StateClass: "measurement", Unit: "%", Category: "diagnostic"},
 		{Component: Sensor, Key: "odometer", Name: "Odometer", DeviceClass: "distance", StateClass: "total", Unit: "km"},

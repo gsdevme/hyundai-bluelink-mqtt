@@ -48,6 +48,7 @@ type Config struct {
 	MQTTClientID      string
 	MQTTTopicPrefix   string
 	HADiscoveryPrefix string
+	DistanceUnit      string // "km" | "mi"; HA label for the Range sensor (no value conversion)
 
 	// Tokens
 	TokenStore      string // "memory" | "kube"
@@ -73,6 +74,7 @@ func Load() (*Config, error) {
 		MQTTClientID:                  getEnv("MQTT_CLIENT_ID", "hyundai-bluelink-mqtt"),
 		MQTTTopicPrefix:               getEnv("MQTT_TOPIC_PREFIX", "hyundai_bluelink"),
 		HADiscoveryPrefix:             getEnv("HA_DISCOVERY_PREFIX", "homeassistant"),
+		DistanceUnit:                  strings.ToLower(getEnv("DISTANCE_UNIT", "km")),
 		TokenStore:                    strings.ToLower(getEnv("TOKEN_STORE", "memory")),
 		TokenSecretName:               os.Getenv("TOKEN_SECRET_NAME"),
 		HealthAddr:                    getEnv("HEALTH_ADDR", ":8080"),
@@ -138,6 +140,12 @@ func Load() (*Config, error) {
 		errs = append(errs, err)
 	}
 
+	switch c.DistanceUnit {
+	case "km", "mi":
+	default:
+		errs = append(errs, fmt.Errorf("DISTANCE_UNIT must be km or mi, got %q", c.DistanceUnit))
+	}
+
 	switch c.TokenStore {
 	case "memory":
 	case "kube":
@@ -183,10 +191,10 @@ func (c *Config) String() string {
 		mode = fmt.Sprintf("mock(%s)", c.BluelinkBaseURL)
 	}
 	return fmt.Sprintf("Config{mode=%s user=%s vin=%s poll=%s forceRefresh=%v@%02d:%02d %s pluggedGate=%v "+
-		"broker=%s topicPrefix=%s haPrefix=%s tokenStore=%s secret=%s health=%s log=%s/%s}",
+		"broker=%s topicPrefix=%s haPrefix=%s distanceUnit=%s tokenStore=%s secret=%s health=%s log=%s/%s}",
 		mode, c.BluelinkUsername, redact(c.BluelinkVIN), c.PollInterval, c.ForceRefreshEnabled,
 		c.ForceRefreshHour, c.ForceRefreshMinute, locName(c.ForceRefreshLocation), c.ForceRefreshOnlyWhenPluggedIn,
-		c.MQTTBrokerURL, c.MQTTTopicPrefix, c.HADiscoveryPrefix, c.TokenStore, c.TokenSecretName,
+		c.MQTTBrokerURL, c.MQTTTopicPrefix, c.HADiscoveryPrefix, c.DistanceUnit, c.TokenStore, c.TokenSecretName,
 		c.HealthAddr, c.LogLevel, c.LogFormat)
 }
 

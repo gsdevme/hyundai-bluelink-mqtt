@@ -33,8 +33,8 @@ func TestBuildDiscoveryTopicsAndCount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
-	if len(msgs) != len(Entities()) {
-		t.Fatalf("got %d messages, want %d", len(msgs), len(Entities()))
+	if len(msgs) != len(Entities("")) {
+		t.Fatalf("got %d messages, want %d", len(msgs), len(Entities("")))
 	}
 	byTopic := decodeByKey(t, msgs)
 
@@ -119,6 +119,32 @@ func TestDeviceTracker(t *testing.T) {
 	}
 	if tr["source_type"] != "gps" {
 		t.Errorf("tracker source_type = %v", tr["source_type"])
+	}
+}
+
+func TestRangeUnitFromConfig(t *testing.T) {
+	// Default (empty) config leaves Range in km and Odometer always km.
+	byTopic := decodeByKey(t, mustBuild(t))
+	if u := byTopic["homeassistant/sensor/VIN123_ev_range/config"]["unit_of_measurement"]; u != "km" {
+		t.Errorf("default ev_range unit = %v, want km", u)
+	}
+	if u := byTopic["homeassistant/sensor/VIN123_odometer/config"]["unit_of_measurement"]; u != "km" {
+		t.Errorf("default odometer unit = %v, want km", u)
+	}
+
+	// DistanceUnit=mi relabels Range only; Odometer stays km (its value is km).
+	cfg := testConfig()
+	cfg.DistanceUnit = "mi"
+	msgs, err := BuildDiscovery(cfg)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	byTopic = decodeByKey(t, msgs)
+	if u := byTopic["homeassistant/sensor/VIN123_ev_range/config"]["unit_of_measurement"]; u != "mi" {
+		t.Errorf("ev_range unit = %v, want mi", u)
+	}
+	if u := byTopic["homeassistant/sensor/VIN123_odometer/config"]["unit_of_measurement"]; u != "km" {
+		t.Errorf("odometer unit = %v, want km (unaffected by DISTANCE_UNIT)", u)
 	}
 }
 

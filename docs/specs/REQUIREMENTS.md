@@ -65,7 +65,8 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-HA-03** Shared `device` block (VIN identifier, Hyundai, Inster) + `~` base-topic
   abbreviation. → `homeassistant/discovery.go`
 - **REQ-HA-04** Entity catalogue (sensors, binary_sensors, device_tracker) with correct
-  `device_class`/`state_class`/units/categories per `03-mqtt-ha-discovery.md`. → `homeassistant/entities.go`
+  `device_class`/`state_class`/units/categories per `03-mqtt-ha-discovery.md`. The `ev_range`
+  unit is set from `DISTANCE_UNIT` (see REQ-CF-07); odometer is always `km`. → `homeassistant/entities.go`
 - **REQ-HA-05** `device_tracker` publishes only `not_home`/`None` state (never `home`) +
   `json_attributes_topic` with `source_type: gps` and lat/lon; HA resolves the actual zone
   (incl. home) from the gps attributes. → `homeassistant/entities.go`, `publisher.go`
@@ -99,6 +100,8 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
   real hosts (empty overrides), `mock` points both at `MOCK_URL` and drops the
   credential requirement (dummies supplied). Code/image default `live`; `.env.dist`
   ships `mock`. → `config.go`, `.env.dist`, `Dockerfile`
+- **REQ-CF-07** `DISTANCE_UNIT` (`km`|`mi`, default `km`) sets the `ev_range` HA label only
+  (no value conversion); validated fail-fast. → `config.go`, `homeassistant/entities.go`
 
 ## Lifecycle & health (`internal/server`, `cmd`, `main.go`)
 

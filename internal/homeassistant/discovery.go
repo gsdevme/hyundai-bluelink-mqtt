@@ -12,6 +12,7 @@ type Config struct {
 	VIN             string
 	Model           string // e.g. "INSTER"
 	Name            string // device name (nickname or default)
+	DistanceUnit    string // "km" | "mi"; Range sensor label (defaults to "km")
 }
 
 // Message is a single MQTT publish (topic + payload); discovery messages are
@@ -46,8 +47,9 @@ func BuildDiscovery(c Config) ([]Message, error) {
 		"model":        modelOrDefault(c.Model),
 		"name":         nameOrDefault(c.Name),
 	}
-	msgs := make([]Message, 0, len(Entities()))
-	for _, e := range Entities() {
+	entities := Entities(c.DistanceUnit)
+	msgs := make([]Message, 0, len(entities))
+	for _, e := range entities {
 		payload := buildEntityPayload(c, e, device)
 		body, err := json.Marshal(payload)
 		if err != nil {
