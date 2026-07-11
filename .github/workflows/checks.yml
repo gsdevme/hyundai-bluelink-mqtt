@@ -1,0 +1,45 @@
+name: checks
+
+# Reusable verification gate. Called by both the PR pipeline (ci.yml) and the
+# main release pipeline (release.yml) so the exact same lint/test/e2e gate that
+# guards pull requests must also be green before a release is cut. Uses the
+# Makefile targets as the single source of truth (same pinned tool versions as
+# local).
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make test
+
+  e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make test-e2e

@@ -1,0 +1,6 @@
+bin/
+.git
+.github
+.claude
+.env
+*.md

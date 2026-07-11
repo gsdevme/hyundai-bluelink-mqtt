@@ -13,6 +13,9 @@ and documents what the deploy repo must provide.
 - Single binary with subcommands: default `CMD ["serve"]`; `mock` also available.
 - Default env in the image: `MODE=live`, `TOKEN_STORE=kube`.
 - Exposes the health port (`HEALTH_ADDR`, default `:8080`).
+- On release a **multi-arch** (`linux/amd64,linux/arm64`) image is published to
+  `ghcr.io/gsdevme/hyundai-bluelink-mqtt`, tagged `:vX.Y.Z` and `:latest`. The package
+  is **public**, so the deploy repo pulls anonymously — no `imagePullSecret` needed.
 
 ## Token persistence (stateless-friendly)
 
@@ -57,5 +60,19 @@ verbs: [get, update, patch]  resources: [secrets]  resourceNames: [<TOKEN_SECRET
 
 ## CI / verification
 
-- `go build ./...`, `go vet ./...`, `go test ./...`, `go test ./features/...`.
-- `/spec-reconcile` reports every `REQ-*` implemented with no untraceable code.
+GitHub Actions runs the Makefile targets (same pinned tool versions as local) as the
+single source of truth. A reusable `checks.yml` (`workflow_call`) runs three jobs —
+`make lint`, `make test`, `make test-e2e` — and is shared by both pipelines below.
+
+- **PR gate (`.github/workflows/ci.yml`, on `pull_request` → `main`).** Runs `checks.yml`
+  plus a build-only Docker validation (`push: false`, `linux/amd64` native) to catch
+  `Dockerfile` breakage before merge.
+- **Release (`.github/workflows/release.yml`, on `push` → `main`).** Runs `checks.yml`,
+  then `googleapis/release-please-action` computes the next semver from the Conventional
+  Commits and maintains a Release PR. Merging that PR cuts the git tag + GitHub Release;
+  the same run then builds and pushes the **multi-arch** (`amd64`+`arm64`) image to
+  `ghcr.io/gsdevme/hyundai-bluelink-mqtt` (`:vX.Y.Z`, `:latest`), gated on
+  release-please's `release_created` output.
+
+Locally: `go build ./...`, `go vet ./...`, `go test ./...`, `go test ./features/...`;
+`/spec-reconcile` reports every `REQ-*` implemented with no untraceable code.
