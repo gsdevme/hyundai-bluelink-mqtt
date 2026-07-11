@@ -31,9 +31,17 @@ running service. It renders, from a concurrency-safe snapshot:
   (rendered as "initialising" until vehicle selection completes, since the server
   listens before selection);
 - schedule — poll interval and the daily force-refresh time + location (or "disabled");
-- the Go runtime version.
+- the Go runtime version;
+- live non-personal metrics from the latest poll, rendered only once a snapshot is
+  recorded (after the first successful publish). In order: battery %, state of health,
+  range (+ unit), charging, plugged-in, charge-port door, AC charge limit, DC charge
+  limit, charging power, est. charge time, est. fast-charge time, 12V battery, outside
+  temperature, inside temperature, tyre-pressure warning, and last-updated — each
+  rendering "unknown" when the value is absent (`nil`).
 
-The page shares `HEALTH_ADDR` with the probes and **never exposes credentials**. The
+Location (latitude/longitude/time), odometer and lock status are **excluded** from the
+page as personal/sensitive; they still flow to MQTT/HA unchanged. The page shares
+`HEALTH_ADDR` with the probes and **never exposes credentials**. The
 markup lives in `internal/server/page.go` via `html/template`, isolated so styling
 (htmx, CSS) can be iterated on later. Unknown paths (`/` is registered as `GET /{$}`)
 return `404`.

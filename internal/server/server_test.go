@@ -6,7 +6,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
+
+func ptr[T any](v T) *T { return &v }
 
 func TestReadinessLifecycle(t *testing.T) {
 	s := New(Config{ReadyFailureThreshold: 3})
@@ -80,6 +83,127 @@ func TestRootStatusPage(t *testing.T) {
 	}
 	if strings.Contains(page, "REDACTEDVIN000001") {
 		t.Fatalf("page leaked the full VIN:\n%s", page)
+	}
+}
+
+// personalMarkers must never appear on the / page — it shares HEALTH_ADDR with
+// the probes and may be reachable by others.
+var personalMarkers = []string{"latitude", "longitude", "odometer", "Locked", "locked", "Lock"}
+
+func TestRootMetricsSection(t *testing.T) {
+	updated := time.Date(2026, 7, 11, 8, 30, 0, 0, time.UTC)
+	full := Metrics{
+		EVBatteryPercentage:      ptr(82.0),
+		EVBatterySoH:             ptr(99.5),
+		EVRange:                  ptr(240.0),
+		EVRangeUnit:              "km",
+		Charging:                 ptr(true),
+		PluggedIn:                ptr(true),
+		ChargePortDoorOpen:       ptr(false),
+		ChargeLimitAC:            ptr(80.0),
+		ChargeLimitDC:            ptr(100.0),
+		ChargingPowerKW:          ptr(7.4),
+		EstChargeDurationMin:     ptr(120),
+		EstFastChargeDurationMin: ptr(35),
+		Battery12VPercentage:     ptr(90),
+		OutsideTemperatureC:      ptr(18.5),
+		InsideTemperatureC:       ptr(21.0),
+		TirePressureWarning:      ptr(false),
+		LastUpdatedAt:            &updated,
+	}
+
+	tests := []struct {
+		name        string
+		set         bool
+		metrics     Metrics
+		wantContain []string
+		wantAbsent  []string
+	}{
+		{
+			name:       "before SetMetrics no section",
+			set:        false,
+			wantAbsent: []string{"<h2>Metrics</h2>", "Battery:"},
+		},
+		{
+			name:    "fully populated",
+			set:     true,
+			metrics: full,
+			wantContain: []string{
+				"<h2>Metrics</h2>",
+				"Battery: 82 %",
+				"State of health: 99.5 %",
+				"Range: 240 km",
+				"Charging: yes",
+				"Plugged in: yes",
+				"Charge port door: no",
+				"Charge limit (AC): 80 %",
+				"Charge limit (DC): 100 %",
+				"Charging power: 7.4 kW",
+				"Est. charge time: 120 min",
+				"Est. fast-charge time: 35 min",
+				"12V battery: 90 %",
+				"Outside temperature: 18.5 °C",
+				"Inside temperature: 21 °C",
+				"Tyre pressure warning: no",
+				"Last updated: 2026-07-11T08:30:00Z",
+			},
+		},
+		{
+			name: "partially nil renders unknown",
+			set:  true,
+			metrics: Metrics{
+				EVBatteryPercentage: ptr(50.0),
+				// EVRange nil with a unit set must not render "unknown km".
+				EVRangeUnit: "km",
+			},
+			wantContain: []string{
+				"Battery: 50 %",
+				"Range: unknown",
+				"State of health: unknown",
+				"Charging: unknown",
+				"Last updated: unknown",
+			},
+			wantAbsent: []string{"unknown km"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := New(Config{ReadyFailureThreshold: 1})
+			s.SetVehicle("INSTER", "Inster", "REDACTEDVIN000001", true)
+			if tt.set {
+				s.SetMetrics(tt.metrics)
+			}
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+
+			resp, err := http.Get(srv.URL + "/")
+			if err != nil {
+				t.Fatalf("GET / error: %v", err)
+			}
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("GET / = %d, want 200", resp.StatusCode)
+			}
+			body, _ := io.ReadAll(resp.Body)
+			page := string(body)
+
+			for _, want := range tt.wantContain {
+				if !strings.Contains(page, want) {
+					t.Errorf("page missing %q:\n%s", want, page)
+				}
+			}
+			for _, absent := range tt.wantAbsent {
+				if strings.Contains(page, absent) {
+					t.Errorf("page unexpectedly contains %q:\n%s", absent, page)
+				}
+			}
+			// Privacy guard: personal fields must never appear.
+			for _, marker := range personalMarkers {
+				if strings.Contains(page, marker) {
+					t.Errorf("page leaked personal marker %q:\n%s", marker, page)
+				}
+			}
+		})
 	}
 }
 

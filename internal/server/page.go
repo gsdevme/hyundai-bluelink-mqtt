@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -25,9 +26,19 @@ type statusView struct {
 	MaskedVIN    string
 	CCS2         bool
 
+	MetricsReady bool
+	Metrics      []metricRow
+
 	PollInterval string
 	ForceEnabled bool
 	ForceTime    string
+}
+
+// metricRow is a single label/value pair rendered under the Metrics heading. The
+// value is pre-formatted here so the template stays dumb.
+type metricRow struct {
+	Label string
+	Value string
 }
 
 // statusTmpl is parsed once at package load. The markup is deliberately minimal
@@ -55,6 +66,12 @@ var statusTmpl = template.Must(template.New("status").Parse(`<!DOCTYPE html>
 {{else}}
 <p>initialising</p>
 {{end}}
+{{if .MetricsReady}}
+<h2>Metrics</h2>
+<ul>
+{{range .Metrics}}<li>{{.Label}}: {{.Value}}</li>
+{{end}}</ul>
+{{end}}
 <h2>Schedule</h2>
 <ul>
 <li>Poll interval: {{.PollInterval}}</li>
@@ -79,6 +96,8 @@ func (s *Server) handleRoot(w http.ResponseWriter, _ *http.Request) {
 		Name:         s.vehicleName,
 		MaskedVIN:    maskVIN(s.vehicleVIN),
 		CCS2:         s.vehicleCCS2,
+		MetricsReady: s.metrics.Set,
+		Metrics:      metricRows(s.metrics),
 		PollInterval: s.cfg.PollInterval.String(),
 		ForceEnabled: s.cfg.ForceEnabled,
 		ForceTime:    forceTime(s.cfg),
@@ -88,6 +107,91 @@ func (s *Server) handleRoot(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_ = statusTmpl.Execute(w, view)
+}
+
+// metricRows formats the non-personal metrics into display rows in a fixed
+// order. Each absent (nil) value renders as "unknown". Values are plain strings
+// escaped by html/template on render.
+func metricRows(m Metrics) []metricRow {
+	return []metricRow{
+		{"Battery", pctVal(m.EVBatteryPercentage)},
+		{"State of health", pctVal(m.EVBatterySoH)},
+		{"Range", rangeVal(m.EVRange, m.EVRangeUnit)},
+		{"Charging", boolVal(m.Charging)},
+		{"Plugged in", boolVal(m.PluggedIn)},
+		{"Charge port door", boolVal(m.ChargePortDoorOpen)},
+		{"Charge limit (AC)", pctVal(m.ChargeLimitAC)},
+		{"Charge limit (DC)", pctVal(m.ChargeLimitDC)},
+		{"Charging power", floatUnitVal(m.ChargingPowerKW, "kW")},
+		{"Est. charge time", minVal(m.EstChargeDurationMin)},
+		{"Est. fast-charge time", minVal(m.EstFastChargeDurationMin)},
+		{"12V battery", intUnitVal(m.Battery12VPercentage, "%")},
+		{"Outside temperature", floatUnitVal(m.OutsideTemperatureC, "°C")},
+		{"Inside temperature", floatUnitVal(m.InsideTemperatureC, "°C")},
+		{"Tyre pressure warning", boolVal(m.TirePressureWarning)},
+		{"Last updated", timeVal(m.LastUpdatedAt)},
+	}
+}
+
+// unknown is the display string for any absent (nil) metric.
+const unknown = "unknown"
+
+func pctVal(v *float64) string { return floatUnitVal(v, "%") }
+
+// rangeVal formats a range value, appending the unit only when the value is
+// present so an absent range renders "unknown", never "unknown km".
+func rangeVal(v *float64, unit string) string {
+	if v == nil {
+		return unknown
+	}
+	if unit == "" {
+		return trimFloat(*v)
+	}
+	return trimFloat(*v) + " " + unit
+}
+
+func floatUnitVal(v *float64, unit string) string {
+	if v == nil {
+		return unknown
+	}
+	return trimFloat(*v) + " " + unit
+}
+
+func intUnitVal(v *int, unit string) string {
+	if v == nil {
+		return unknown
+	}
+	return fmt.Sprintf("%d %s", *v, unit)
+}
+
+// minVal formats a duration-in-minutes metric.
+func minVal(v *int) string {
+	if v == nil {
+		return unknown
+	}
+	return fmt.Sprintf("%d min", *v)
+}
+
+func boolVal(v *bool) string {
+	if v == nil {
+		return unknown
+	}
+	if *v {
+		return "yes"
+	}
+	return "no"
+}
+
+func timeVal(v *time.Time) string {
+	if v == nil {
+		return unknown
+	}
+	return v.Format(time.RFC3339)
+}
+
+// trimFloat formats a float without trailing zeros (e.g. 42.5, 100).
+func trimFloat(v float64) string {
+	return strconv.FormatFloat(v, 'f', -1, 64)
 }
 
 // maskVIN keeps only the last 4 characters of a VIN, replacing the rest with

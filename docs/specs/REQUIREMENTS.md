@@ -112,6 +112,10 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-LC-06** Status/health server listens during init so probes work at startup. → `cmd/serve.go`
 - **REQ-LC-07** Root `/` HTML status page: service, readiness, uptime, vehicle
   (VIN masked to last 4), schedule, Go version; always `200`, no secrets. → `internal/server`
+- **REQ-LC-08** Root `/` page renders live non-personal vehicle metrics from the latest
+  poll (gated on a snapshot being set after a successful publish; each absent field
+  "unknown"), always `200`; excludes location, odometer and lock status as
+  personal/sensitive. → `internal/server`, `internal/cmd/serve.go`
 
 ## Tokens (`internal/bluelink/tokenstore.go`)
 

@@ -23,6 +23,43 @@ type Config struct {
 	ForceLocation         *time.Location
 }
 
+// Metrics is a snapshot of the latest non-personal vehicle metrics shown on the
+// / page. It is deliberately decoupled from internal/bluelink: serve.go maps a
+// bluelink.VehicleState into this type so there is no import coupling here.
+// Location, odometer and lock status are intentionally omitted as
+// personal/sensitive. Pointer fields distinguish "unknown/absent" (rendered as
+// "unknown") from a real zero value. The zero value (Set == false) renders no
+// Metrics section, mirroring vehicleSet.
+type Metrics struct {
+	Set bool
+
+	EVBatteryPercentage *float64
+	EVBatterySoH        *float64
+
+	EVRange     *float64
+	EVRangeUnit string
+
+	Charging           *bool
+	PluggedIn          *bool
+	ChargePortDoorOpen *bool
+
+	ChargeLimitAC *float64
+	ChargeLimitDC *float64
+
+	ChargingPowerKW          *float64
+	EstChargeDurationMin     *int
+	EstFastChargeDurationMin *int
+
+	Battery12VPercentage *int
+
+	OutsideTemperatureC *float64
+	InsideTemperatureC  *float64
+
+	TirePressureWarning *bool
+
+	LastUpdatedAt *time.Time
+}
+
 // Server tracks readiness based on poll outcomes and holds a concurrency-safe
 // snapshot of operational status for the / page.
 type Server struct {
@@ -38,6 +75,9 @@ type Server struct {
 	vehicleName  string
 	vehicleVIN   string
 	vehicleCCS2  bool
+
+	// metrics is the latest non-personal metrics snapshot (see SetMetrics).
+	metrics Metrics
 
 	cfg       Config
 	startedAt time.Time
@@ -90,6 +130,16 @@ func (s *Server) SetVehicle(model, name, vin string, ccs2 bool) {
 	s.vehicleName = name
 	s.vehicleVIN = vin
 	s.vehicleCCS2 = ccs2
+}
+
+// SetMetrics records the latest non-personal metrics snapshot for the status
+// page. It is called after each successful publish; until then the / page
+// renders no Metrics section.
+func (s *Server) SetMetrics(m Metrics) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	m.Set = true
+	s.metrics = m
 }
 
 // Handler returns the mux serving /, /healthz and /readyz. See routes.go for the

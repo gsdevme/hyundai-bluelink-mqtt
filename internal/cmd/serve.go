@@ -124,8 +124,9 @@ func runServe(ctx context.Context) error {
 		return fmt.Errorf("publish availability: %w", err)
 	}
 
-	// Scheduler.
-	sched := scheduler.New(client, pub, status, scheduler.Config{
+	// Scheduler. recordingPublisher decorates pub so the status page records a
+	// display snapshot after each successful publish.
+	sched := scheduler.New(client, recordingPublisher{pub: pub, status: status}, status, scheduler.Config{
 		Vehicle:                vehicle,
 		PollInterval:           cfg.PollInterval,
 		MaxRetries:             cfg.PollMaxRetries,
@@ -160,6 +161,51 @@ func runServe(ctx context.Context) error {
 	}
 	<-schedDone
 	return shutdownServer(healthSrv)
+}
+
+// statePublisher is the one publish method recordingPublisher decorates.
+type statePublisher interface {
+	PublishState(ctx context.Context, st bluelink.VehicleState) error
+}
+
+// recordingPublisher publishes state, then records a display snapshot for the
+// status page on success.
+type recordingPublisher struct {
+	pub    statePublisher
+	status *server.Server
+}
+
+func (r recordingPublisher) PublishState(ctx context.Context, st bluelink.VehicleState) error {
+	if err := r.pub.PublishState(ctx, st); err != nil {
+		return err // publish failed → keep the last good snapshot, do not record
+	}
+	r.status.SetMetrics(metricsFromState(st))
+	return nil
+}
+
+// metricsFromState maps a bluelink.VehicleState into the non-personal
+// server.Metrics shown on the / page. Location (lat/long/time), odometer and
+// lock status are deliberately omitted as personal/sensitive.
+func metricsFromState(st bluelink.VehicleState) server.Metrics {
+	return server.Metrics{
+		EVBatteryPercentage:      st.EVBatteryPercentage,
+		EVBatterySoH:             st.EVBatterySoH,
+		EVRange:                  st.EVRange,
+		EVRangeUnit:              st.EVRangeUnit,
+		Charging:                 st.Charging,
+		PluggedIn:                st.PluggedIn,
+		ChargePortDoorOpen:       st.ChargePortDoorOpen,
+		ChargeLimitAC:            st.ChargeLimitAC,
+		ChargeLimitDC:            st.ChargeLimitDC,
+		ChargingPowerKW:          st.ChargingPowerKW,
+		EstChargeDurationMin:     st.EstChargeDurationMin,
+		EstFastChargeDurationMin: st.EstFastChargeDurationMin,
+		Battery12VPercentage:     st.Battery12VPercentage,
+		OutsideTemperatureC:      st.OutsideTemperatureC,
+		InsideTemperatureC:       st.InsideTemperatureC,
+		TirePressureWarning:      st.TirePressureWarning,
+		LastUpdatedAt:            st.LastUpdatedAt,
+	}
 }
 
 func buildTokenStore(cfg *config.Config) (bluelink.TokenStore, error) {
