@@ -48,7 +48,7 @@ return `404`.
 
 ### Threshold vs poll interval & restart policy
 
-With `POLL_INTERVAL=30m` and threshold `3`, `/readyz` stays ready through ~90m of
+With `POLL_INTERVAL=45m` and threshold `3`, `/readyz` stays ready through ~135m of
 upstream trouble before signalling not-ready — deliberately tolerant so Kubernetes does
 not thrash a pod during a transient Bluelink outage. Operators size the readiness probe
 `periodSeconds`/`failureThreshold` and any restart policy in the **deploy repo** with

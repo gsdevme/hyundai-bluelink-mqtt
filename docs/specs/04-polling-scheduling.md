@@ -5,7 +5,7 @@
 
 ## Cached poll loop (default: never wakes the car)
 
-- Interval `POLL_INTERVAL`, default **30m**. 15m is documented as risky (more load /
+- Interval `POLL_INTERVAL`, default **45m**. 15m is documented as risky (more load /
   closer to rate limits); anything below is discouraged.
 - Fires immediately once on startup, then every interval.
 - Each poll does **2 API calls**: cached CCS2 status

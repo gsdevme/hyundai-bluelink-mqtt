@@ -35,7 +35,7 @@ Deployed to Kubernetes (manifests live in a **separate repo**; none in this repo
    (by `VIN` or first) and records its CCS protocol flag.
 3. Publish HA **discovery** configs once on startup (retained, QoS 1).
 4. `internal/scheduler` polls **cached** status + location every `POLL_INTERVAL`
-   (default 30m) and publishes a retained JSON state document; a daily **force**
+   (default 45m) and publishes a retained JSON state document; a daily **force**
    refresh runs at `FORCE_REFRESH_AT` (optionally gated on plugged-in).
 5. `internal/server` exposes an HTML status page on `/` plus `/healthz` (liveness)
    and `/readyz` (readiness).

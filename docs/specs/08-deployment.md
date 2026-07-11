@@ -49,7 +49,7 @@ verbs: [get, update, patch]  resources: [secrets]  resourceNames: [<TOKEN_SECRET
 
 - `replicas: 1` (single writer for the token Secret).
 - Liveness probe → `/healthz`; readiness probe → `/readyz` with generous
-  `failureThreshold`/`periodSeconds` given the 30m poll cadence (see `06`).
+  `failureThreshold`/`periodSeconds` given the 45m poll cadence (see `06`).
 - Env/Secret refs for `BLUELINK_*`, `MQTT_*`, `TOKEN_SECRET_NAME`.
 - `terminationGracePeriodSeconds` long enough for the explicit `offline` publish +
   clean MQTT disconnect (a few seconds is ample).

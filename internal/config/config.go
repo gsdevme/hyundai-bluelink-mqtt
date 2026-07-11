@@ -117,7 +117,7 @@ func Load() (*Config, error) {
 		errs = append(errs, fmt.Errorf("MQTT_BROKER_URL is invalid: %w", err))
 	}
 
-	interval, err := parseDuration("POLL_INTERVAL", 30*time.Minute)
+	interval, err := parseDuration("POLL_INTERVAL", 45*time.Minute)
 	if err != nil {
 		errs = append(errs, err)
 	} else if interval < MinPollInterval {

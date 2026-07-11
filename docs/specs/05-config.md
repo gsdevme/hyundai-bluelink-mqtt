@@ -15,7 +15,7 @@ no-op in prod where the file is absent). `.env.dist` is the committed template;
 | `BLUELINK_PASSWORD` | — | if `live` | Account password (RSA-encrypted before transit). Ignored in `mock`. |
 | `BLUELINK_VIN` | — | no | Target vehicle VIN. If empty, the first vehicle is used. |
 | `BLUELINK_PIN` | — | no | Account PIN (not needed for read-only status). |
-| `POLL_INTERVAL` | `30m` | no | Cached poll cadence (`time.ParseDuration`). Min guard ~5m; 15m documented risky. |
+| `POLL_INTERVAL` | `45m` | no | Cached poll cadence (`time.ParseDuration`). Min guard ~5m; 15m documented risky. |
 | `FORCE_REFRESH_AT` | `05:00` | no | Daily force-refresh wall-clock time `HH:MM`. Empty disables it. |
 | `FORCE_REFRESH_TZ` | `UTC` | no | IANA timezone for `FORCE_REFRESH_AT`. |
 | `FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN` | `false` | no | Gate the daily force refresh on plugged-in state. |

@@ -79,7 +79,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 
 ## Scheduling (`internal/scheduler`)
 
-- **REQ-SC-01** Cached poll loop at `POLL_INTERVAL` (default 30m), immediate first run. → `scheduler.go`
+- **REQ-SC-01** Cached poll loop at `POLL_INTERVAL` (default 45m), immediate first run. → `scheduler.go`
 - **REQ-SC-02** Each cached poll = 2 API calls (status + location) → one state publish. → `scheduler.go`
 - **REQ-SC-03** Transient errors retry up to `POLL_MAX_RETRIES` with exponential backoff. → `scheduler.go`
 - **REQ-SC-04** Daily force refresh at `FORCE_REFRESH_AT`/`FORCE_REFRESH_TZ` via

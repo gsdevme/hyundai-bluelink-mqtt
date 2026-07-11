@@ -29,8 +29,8 @@ func TestLoadDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
-	if c.PollInterval.Minutes() != 30 {
-		t.Errorf("poll interval = %s, want 30m", c.PollInterval)
+	if c.PollInterval.Minutes() != 45 {
+		t.Errorf("poll interval = %s, want 45m", c.PollInterval)
 	}
 	if !c.ForceRefreshEnabled || c.ForceRefreshHour != 5 {
 		t.Errorf("force refresh = %v @ %d", c.ForceRefreshEnabled, c.ForceRefreshHour)
