@@ -16,7 +16,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-BL-05** Stamp = base64(CFB XOR `{APP_ID}:{unix}`), byte-wise, truncating. → `stamp.go`
 - **REQ-BL-06** Token refresh via `grant_type=refresh_token`; persists rotated refresh
   token; falls back to full login on failure. → `auth.go`
-- **REQ-BL-07** `ConsentRequiredError` surfaced when signin redirects to
+- **REQ-BL-07** Sentinel `ErrConsentRequired` surfaced when signin redirects to
   `/web/v1/user/authorization`. → `auth.go`
 - **REQ-BL-08** Device registration `POST notifications/register` → `deviceId`. → `client.go`
 - **REQ-BL-09** Vehicle list `GET vehicles`; capture `ccuCCS2ProtocolSupport` and
@@ -25,7 +25,8 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-BL-11** Force status `GET ccs2/carstatus` (GET, wakes car). → `status.go`
 - **REQ-BL-12** Park location `GET location/park`; overrides embedded stale location. → `status.go`
 - **REQ-BL-13** Authenticated SPA headers on every call (Authorization, service-id,
-  application-id, Stamp, device-id, Ccuccs2protocolsupport, Host, UA). → `client.go`
+  application-id, Stamp, device-id, Ccuccs2protocolsupport, UA); `Host` is URL-derived by
+  Go, not set explicitly. → `client.go`
 - **REQ-BL-14** Protocol branch on `ccuCCS2ProtocolSupport`: `!= 0` → CCS2
   (`fetchStatus`), `== 0` → CCS1 (`fetchStatusCCS1`). Both map into `VehicleState` and
   publish identically. → `status.go`, `parse_ccs1.go`
@@ -36,6 +37,8 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
   vehicleStatus with no wrapper/location/odometer). The force path resolves location from
   `/location/park` (`resMsg.gpsDetail`); odometer stays nil until the next cached poll.
   → `status.go`
+- **REQ-BL-17** Hidden `dump` diagnostic command captures raw API responses via the
+  normal auth/stamp/refresh path (`Client.DebugGet`). → `cmd/dump.go`, `client.go`
 
 ## Domain model (`internal/bluelink`)
 
@@ -63,8 +66,9 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
   abbreviation. → `homeassistant/discovery.go`
 - **REQ-HA-04** Entity catalogue (sensors, binary_sensors, device_tracker) with correct
   `device_class`/`state_class`/units/categories per `03-mqtt-ha-discovery.md`. → `homeassistant/entities.go`
-- **REQ-HA-05** `device_tracker` uses `home/not_home/None` state + `json_attributes_topic`
-  with `source_type: gps` and lat/lon. → `homeassistant/entities.go`, `publisher.go`
+- **REQ-HA-05** `device_tracker` publishes only `not_home`/`None` state (never `home`) +
+  `json_attributes_topic` with `source_type: gps` and lat/lon; HA resolves the actual zone
+  (incl. home) from the gps attributes. → `homeassistant/entities.go`, `publisher.go`
 - **REQ-HA-06** Availability via LWT (retained `offline`); `online` published on connect;
   every entity references the availability topic. → `mqtt/client.go`, `homeassistant/discovery.go`
 - **REQ-HA-07** `entity_category: diagnostic` on SoH, 12V, charge limits, charge-port,
@@ -81,7 +85,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-SC-04** Daily force refresh at `FORCE_REFRESH_AT`/`FORCE_REFRESH_TZ` via
   `time.LoadLocation`; DST-safe daily recompute. → `scheduler.go`
 - **REQ-SC-05** Force refresh optionally gated on plugged-in (cached pre-check). → `scheduler.go`
-- **REQ-SC-06** `_ "time/tzdata"` imported so zones work in distroless. → `main.go`/`scheduler.go`
+- **REQ-SC-06** `_ "time/tzdata"` imported so zones work in distroless. → `cmd/root.go`
 - **REQ-SC-07** Cached poll and force refresh never overlap (serialised). → `scheduler.go`
 
 ## Config (`internal/config`)
@@ -113,8 +117,8 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 
 - **REQ-TK-01** `TokenStore` interface `Load`/`Save`. → `tokenstore.go`
 - **REQ-TK-02** `memoryStore` backend. → `tokenstore.go`
-- **REQ-TK-03** `kubeSecretStore` backend: in-cluster get/patch of the named Secret. → `tokenstore.go`
-- **REQ-TK-04** Optimistic concurrency via `resourceVersion`; retry once on conflict. → `tokenstore.go`
+- **REQ-TK-03** `kubeSecretStore` backend: in-cluster get/patch of the named Secret. → `tokenstore_kube.go`
+- **REQ-TK-04** Optimistic concurrency via `resourceVersion`; retry once on conflict. → `tokenstore_kube.go`
 - **REQ-TK-05** Tokens loaded on startup; saved after each refresh. → `client.go`/`auth.go`
 - **REQ-TK-06** Backend selected by `TOKEN_STORE`. → `tokenstore.go`/`config.go`
 
@@ -125,7 +129,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-TS-03** godog scenarios: startup discovery, cached poll state, token refresh,
   daily force refresh (+ unplugged skip), graceful degradation, graceful shutdown. → `features/*.feature`
 - **REQ-TS-04** Unit tests for `stamp`, `jwk`, `parse_ccs2`, discovery, config. → `*_test.go`
-- **REQ-TS-05** Recording fake `Publisher` — no broker in tests. → `features/steps_test.go`
+- **REQ-TS-05** Recording fake `Publisher` — no broker in tests. → `internal/publisher/recording.go`
 
 ## Deployment (`Dockerfile`, `go.mod`)
 
@@ -139,3 +143,4 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-AS-02** Skill `effective-go`. → `.claude/skills/...`
 - **REQ-AS-03** Skill `go-1.26`. → `.claude/skills/...`
 - **REQ-AS-04** Command `/spec-reconcile`. → `.claude/commands/spec-reconcile.md`
+- **REQ-AS-05** Planner agent `go-http-pattern-planner`. → `.claude/agents/go-http-pattern-planner.md`
