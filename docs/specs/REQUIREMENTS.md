@@ -130,6 +130,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
   daily force refresh (+ unplugged skip), graceful degradation, graceful shutdown. → `features/*.feature`
 - **REQ-TS-04** Unit tests for `stamp`, `jwk`, `parse_ccs2`, discovery, config. → `*_test.go`
 - **REQ-TS-05** Recording fake `Publisher` — no broker in tests. → `internal/publisher/recording.go`
+- **REQ-TS-06** `golangci-lint` (default linters + gofmt) run via `make lint`. → `.golangci.yml`, `Makefile`
 
 ## Deployment (`Dockerfile`, `go.mod`)
 

@@ -33,6 +33,7 @@ make run          # build + serve (poll -> MQTT; honours MODE from .env)
 make run-mock     # build + run the standalone mock Bluelink API (add --ccs1 by editing the target)
 make test         # unit + integration (excludes the godog features suite)
 make test-e2e     # godog acceptance suite (./features/...)
+make lint         # golangci-lint (installs pinned binary into ./bin on first use)
 
 gofmt -l $(git ls-files '*.go' | grep -v vendor)   # must be empty
 go vet ./... && go build ./...

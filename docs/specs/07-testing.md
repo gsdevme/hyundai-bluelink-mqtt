@@ -64,6 +64,7 @@ MQTT topics/payloads and readiness:
 ## Commands
 
 - `go build ./... && go vet ./...` clean.
+- `make lint` — `golangci-lint` (default linters + gofmt) clean.
 - `go test ./...` — unit green.
 - `go test ./features/...` — godog acceptance green.
 - The `mock` subcommand + `serve` with `MODE=mock` against a local Mosquitto for a real

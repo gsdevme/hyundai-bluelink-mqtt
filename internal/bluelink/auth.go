@@ -28,6 +28,7 @@ var (
 // encryptPassword RSA-encrypts the password with PKCS#1 v1.5 and hex-encodes it,
 // matching the IDP's expected `encryptedPassword=true` format.
 func encryptPassword(pub *rsa.PublicKey, password string) (string, error) {
+	//nolint:staticcheck // SA1019: the Bluelink IDP mandates RSA PKCS#1 v1.5; must match the reference lib.
 	ct, err := rsa.EncryptPKCS1v15(rand.Reader, pub, []byte(password))
 	if err != nil {
 		return "", fmt.Errorf("rsa encrypt password: %w", err)

@@ -66,6 +66,7 @@ func Connect(ctx context.Context, opts Options) (*Client, error) {
 		ClientConfig: paho.ClientConfig{ClientID: opts.ClientID},
 	}
 	if opts.AvailabilityTopic != "" {
+		//nolint:staticcheck // SA1019: helper still encodes the correct WillProperties defaults for our LWT.
 		cfg.SetWillMessage(opts.AvailabilityTopic, []byte("offline"), 1, true)
 	}
 
