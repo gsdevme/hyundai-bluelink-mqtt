@@ -10,24 +10,33 @@ import (
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/mock"
 )
 
-var mockAddr string
+var (
+	mockAddr string
+	mockCCS1 bool
+)
 
 var mockCmd = &cobra.Command{
 	Use:   "mock",
 	Short: "Run the standalone Bluelink EU mock API server",
-	Long: "Serves canned Inster CCS2 responses so the full pipeline can run " +
-		"without the real Bluelink API. Point BLUELINK_BASE_URL and " +
-		"BLUELINK_LOGIN_URL at this server's address.",
+	Long: "Serves canned Inster responses so the full pipeline can run without " +
+		"the real Bluelink API. Point BLUELINK_BASE_URL and BLUELINK_LOGIN_URL at " +
+		"this server's address. Serves a CCS2 vehicle by default; pass --ccs1 to " +
+		"simulate an older CCS1 vehicle instead.",
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		logger := newLogger("info", "text")
 		opts := mock.Defaults()
+		opts.CCS2 = !mockCCS1
 		opts.Logger = logger
 		srv, err := mock.New(opts)
 		if err != nil {
 			return fmt.Errorf("build mock: %w", err)
 		}
 
-		logger.Info("mock Bluelink API listening", "addr", mockAddr)
+		protocol := "ccs2"
+		if mockCCS1 {
+			protocol = "ccs1"
+		}
+		logger.Info("mock Bluelink API listening", "addr", mockAddr, "protocol", protocol)
 		httpSrv := &http.Server{Addr: mockAddr, Handler: srv.Handler()}
 
 		serveErr := make(chan error, 1)
@@ -56,4 +65,5 @@ var mockCmd = &cobra.Command{
 
 func init() {
 	mockCmd.Flags().StringVar(&mockAddr, "addr", ":8090", "listen address for the mock API")
+	mockCmd.Flags().BoolVar(&mockCCS1, "ccs1", false, "serve a CCS1 vehicle instead of the default CCS2")
 }
