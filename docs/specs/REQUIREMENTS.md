@@ -136,11 +136,13 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-TS-05** Recording fake `Publisher` — no broker in tests. → `internal/publisher/recording.go`
 - **REQ-TS-06** `golangci-lint` (default linters + gofmt) run via `make lint`. → `.golangci.yml`, `Makefile`
 
-## Deployment (`Dockerfile`, `go.mod`)
+## Deployment (`Dockerfile`, `go.mod`, `.github/workflows/`)
 
 - **REQ-DP-01** Multi-stage Dockerfile: static `CGO_ENABLED=0`, distroless nonroot. → `Dockerfile`
 - **REQ-DP-02** Image default env `TOKEN_STORE=kube`; default `CMD serve`. → `Dockerfile`
 - **REQ-DP-03** Module path `github.com/gsdevme/hyundai-bluelink-mqtt`. → `go.mod`
+- **REQ-DP-04** GitHub Actions PR gate runs `make lint`/`test`/`test-e2e` and a build-only Docker validation on every pull request. → `.github/workflows/ci.yml`, `.github/workflows/checks.yml`
+- **REQ-DP-05** On merge to `main`, release-please cuts a semver tag + GitHub Release from Conventional Commits; a release then builds and pushes a multi-arch (`amd64`+`arm64`) image to `ghcr.io/gsdevme/hyundai-bluelink-mqtt` (`:vX.Y.Z`, `:latest`). → `.github/workflows/release.yml`, `release-please-config.json`
 
 ## Claude assets
 
