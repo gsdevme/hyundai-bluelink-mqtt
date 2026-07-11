@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/gsdevme/hyundai-bluelink-mqtt/compare/v1.0.0...v1.0.1) (2026-07-11)
+
+
+### Bug Fixes
+
+* **homeassistant:** make Range unit configurable via DISTANCE_UNIT ([5cca545](https://github.com/gsdevme/hyundai-bluelink-mqtt/commit/5cca5459195368f99badaa6e533ec2d879dbc449))
+
 ## 1.0.0 (2026-07-11)
 
 
