@@ -149,6 +149,25 @@ func normalizeBatterySoC(value *float64, reliability *int) *int {
 	return &v
 }
 
+// kmPerMile is the exact kilometres-per-mile conversion factor.
+const kmPerMile = 1.609344
+
+// convertDistance converts value from unit `from` to unit `to` ("km"/"mi"). It
+// returns the value unchanged when the units match, either side is empty, or a unit
+// is unrecognised, so callers can pass through unknown-unit values safely.
+func convertDistance(value float64, from, to string) float64 {
+	switch {
+	case from == to, from == "", to == "":
+		return value
+	case from == "km" && to == "mi":
+		return value / kmPerMile
+	case from == "mi" && to == "km":
+		return value * kmPerMile
+	default:
+		return value
+	}
+}
+
 // distanceUnit maps a CCS2 distance-unit index to a unit string.
 func distanceUnit(idx *int) string {
 	if idx == nil {

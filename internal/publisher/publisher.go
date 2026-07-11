@@ -60,6 +60,10 @@ func (s *Service) PublishAvailability(ctx context.Context, online bool) error {
 // PublishState publishes the retained JSON state document and the device-tracker
 // topics for the given vehicle state.
 func (s *Service) PublishState(ctx context.Context, st bluelink.VehicleState) error {
+	// Convert the odometer to the configured display unit before publishing so the
+	// value matches the odometer entity's HA label (Range needs no conversion — the
+	// car already reports it in its display unit).
+	st = st.InDistanceUnit(s.cfg.DistanceUnit)
 	body, err := json.Marshal(st)
 	if err != nil {
 		return fmt.Errorf("marshal state: %w", err)

@@ -27,10 +27,12 @@ type Entity struct {
 	InvertBool bool
 }
 
-// Entities returns the full catalogue published for a vehicle. distanceUnit sets
-// the Range sensor's HA label ("km" or "mi"); it defaults to "km" when empty. The
-// value is a label only — the car reports range in its own display unit and we
-// publish that number unconverted. (Odometer is always km as reported by the API.)
+// Entities returns the full catalogue published for a vehicle. distanceUnit
+// ("km"/"mi", defaulting to "km" when empty) sets the HA label for the Range and
+// Odometer sensors. For Range it is a label only — the car reports range in its own
+// display unit and we publish that number unconverted. For Odometer the published
+// value is converted to distanceUnit (see VehicleState.InDistanceUnit), because the
+// API reports the odometer in km regardless of the driver's display unit.
 func Entities(distanceUnit string) []Entity {
 	if distanceUnit == "" {
 		distanceUnit = "km"
@@ -41,7 +43,7 @@ func Entities(distanceUnit string) []Entity {
 		{Component: Sensor, Key: "ev_range", Name: "Range", DeviceClass: "distance", StateClass: "measurement", Unit: distanceUnit},
 		{Component: Sensor, Key: "charging_power", Name: "Charging power", DeviceClass: "power", StateClass: "measurement", Unit: "kW"},
 		{Component: Sensor, Key: "battery_12v", Name: "12V battery", DeviceClass: "battery", StateClass: "measurement", Unit: "%", Category: "diagnostic"},
-		{Component: Sensor, Key: "odometer", Name: "Odometer", DeviceClass: "distance", StateClass: "total", Unit: "km"},
+		{Component: Sensor, Key: "odometer", Name: "Odometer", DeviceClass: "distance", StateClass: "total", Unit: distanceUnit},
 		{Component: Sensor, Key: "charge_limit_ac", Name: "AC charge limit", StateClass: "measurement", Unit: "%", Category: "diagnostic"},
 		{Component: Sensor, Key: "charge_limit_dc", Name: "DC charge limit", StateClass: "measurement", Unit: "%", Category: "diagnostic"},
 		{Component: Sensor, Key: "est_charge_time", Name: "Charge time remaining", DeviceClass: "duration", StateClass: "measurement", Unit: "min"},

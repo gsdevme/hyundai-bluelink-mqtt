@@ -44,7 +44,7 @@ Every config payload includes:
 | `ev_range` | Range | `distance` | `measurement` | `km`/`mi` | — |
 | `charging_power` | Charging power | `power` | `measurement` | `kW` | — |
 | `battery_12v` | 12V battery | `battery` | `measurement` | `%` | diagnostic |
-| `odometer` | Odometer | `distance` | `total` | `km` | — |
+| `odometer` | Odometer | `distance` | `total` | `km`/`mi` | — |
 | `charge_limit_ac` | AC charge limit | — | `measurement` | `%` | diagnostic |
 | `charge_limit_dc` | DC charge limit | — | `measurement` | `%` | diagnostic |
 | `est_charge_time` | Charge time remaining | `duration` | `measurement` | `min` | — |
@@ -52,9 +52,11 @@ Every config payload includes:
 | `ev_battery_soh` | Battery health | — | `measurement` | `%` | diagnostic |
 | `last_updated` | Last updated | `timestamp` | — | — | diagnostic |
 
-`ev_range` unit is set from `DISTANCE_UNIT` (`km`/`mi`, default `km`) — a label only; the
-value is published as the car reports it, unconverted. `odometer` is always `km` (the API
-reports odometer in km regardless of the driver's display unit).
+Both `ev_range` and `odometer` units are set from `DISTANCE_UNIT` (`km`/`mi`, default
+`km`). For `ev_range` it is a label only — the value is published as the car reports it,
+unconverted. For `odometer` the published value is **converted** to `DISTANCE_UNIT`
+(rounded to 1 dp) because the API reports the odometer in km regardless of the driver's
+display unit, so a label-only change would mislabel the number.
 
 `odometer` uses `state_class: total` (not `total_increasing`) to tolerate resets.
 
