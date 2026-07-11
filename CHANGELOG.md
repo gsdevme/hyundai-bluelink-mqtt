@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/gsdevme/hyundai-bluelink-mqtt/compare/v1.0.1...v1.1.0) (2026-07-11)
+
+
+### Features
+
+* **homeassistant:** convert odometer to configured DISTANCE_UNIT ([c1f1801](https://github.com/gsdevme/hyundai-bluelink-mqtt/commit/c1f1801abb0147ff68b605f1b538fb48b5708d78))
+
 ## [1.0.1](https://github.com/gsdevme/hyundai-bluelink-mqtt/compare/v1.0.0...v1.0.1) (2026-07-11)
 
 
