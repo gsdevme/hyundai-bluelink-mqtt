@@ -122,8 +122,8 @@ func TestDeviceTracker(t *testing.T) {
 	}
 }
 
-func TestRangeUnitFromConfig(t *testing.T) {
-	// Default (empty) config leaves Range in km and Odometer always km.
+func TestDistanceUnitFromConfig(t *testing.T) {
+	// Default (empty) config leaves both Range and Odometer labelled km.
 	byTopic := decodeByKey(t, mustBuild(t))
 	if u := byTopic["homeassistant/sensor/VIN123_ev_range/config"]["unit_of_measurement"]; u != "km" {
 		t.Errorf("default ev_range unit = %v, want km", u)
@@ -132,7 +132,9 @@ func TestRangeUnitFromConfig(t *testing.T) {
 		t.Errorf("default odometer unit = %v, want km", u)
 	}
 
-	// DistanceUnit=mi relabels Range only; Odometer stays km (its value is km).
+	// DistanceUnit=mi labels both Range and Odometer mi. (Range is a label-only
+	// change; the odometer value is converted at publish time — see the publisher
+	// and bluelink.InDistanceUnit tests.)
 	cfg := testConfig()
 	cfg.DistanceUnit = "mi"
 	msgs, err := BuildDiscovery(cfg)
@@ -143,8 +145,8 @@ func TestRangeUnitFromConfig(t *testing.T) {
 	if u := byTopic["homeassistant/sensor/VIN123_ev_range/config"]["unit_of_measurement"]; u != "mi" {
 		t.Errorf("ev_range unit = %v, want mi", u)
 	}
-	if u := byTopic["homeassistant/sensor/VIN123_odometer/config"]["unit_of_measurement"]; u != "km" {
-		t.Errorf("odometer unit = %v, want km (unaffected by DISTANCE_UNIT)", u)
+	if u := byTopic["homeassistant/sensor/VIN123_odometer/config"]["unit_of_measurement"]; u != "mi" {
+		t.Errorf("odometer unit = %v, want mi", u)
 	}
 }
 

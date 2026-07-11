@@ -5,7 +5,10 @@
 // the results into the clean [VehicleState] type the rest of the app consumes.
 package bluelink
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 // Vehicle is a car on the account, with the protocol flag that decides how its
 // status is parsed.
@@ -59,6 +62,25 @@ type VehicleState struct {
 	LocationUpdatedAt *time.Time `json:"location_updated_at,omitempty"`
 
 	LastUpdatedAt *time.Time `json:"last_updated,omitempty"`
+}
+
+// InDistanceUnit returns a copy of the state with the odometer converted to unit
+// ("km"/"mi") and OdometerUnit set to it. Unlike range — which the car already
+// reports in its display unit and we publish unconverted — the odometer value is
+// genuinely in its OdometerUnit (km for CCS2), so honouring DISTANCE_UNIT needs a
+// real conversion. Returns the state unchanged when unit is empty, the odometer is
+// absent, or it already matches unit (preserving the raw reported value); otherwise
+// the converted value is rounded to 1 dp. The new value goes through a fresh pointer
+// so the caller's state is never mutated.
+func (s VehicleState) InDistanceUnit(unit string) VehicleState {
+	if unit == "" || s.Odometer == nil || s.OdometerUnit == unit {
+		return s
+	}
+	v := convertDistance(*s.Odometer, s.OdometerUnit, unit)
+	v = math.Round(v*10) / 10
+	s.Odometer = &v
+	s.OdometerUnit = unit
+	return s
 }
 
 // Tokens is the persisted authentication state, round-tripped through a

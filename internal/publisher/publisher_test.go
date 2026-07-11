@@ -90,6 +90,40 @@ func TestPublishStateNoLocation(t *testing.T) {
 	}
 }
 
+func TestPublishStateOdometerDistanceUnit(t *testing.T) {
+	odoOf := func(s *Service) any {
+		rp := NewRecordingPublisher()
+		s.pub = rp
+		st := bluelink.VehicleState{Odometer: fp(14213), OdometerUnit: "km"}
+		if err := s.PublishState(t.Context(), st); err != nil {
+			t.Fatalf("state: %v", err)
+		}
+		rec, ok := rp.Get("hyundai_bluelink/VIN123/state")
+		if !ok {
+			t.Fatal("state not published")
+		}
+		var got map[string]any
+		if err := json.Unmarshal(rec.Payload, &got); err != nil {
+			t.Fatalf("state payload: %v", err)
+		}
+		return got["odometer"]
+	}
+
+	// Default (km) publishes the raw km value untouched.
+	s, _ := newService()
+	if v := odoOf(s); v != 14213.0 {
+		t.Errorf("km odometer = %v, want 14213", v)
+	}
+
+	// DISTANCE_UNIT=mi converts the value (14213 km -> 8831.5 mi, 1 dp).
+	cfg := s.cfg
+	cfg.DistanceUnit = "mi"
+	s = New(nil, cfg)
+	if v := odoOf(s); v != 8831.5 {
+		t.Errorf("mi odometer = %v, want 8831.5", v)
+	}
+}
+
 func TestPublishAvailability(t *testing.T) {
 	s, rp := newService()
 	_ = s.PublishAvailability(t.Context(), true)
