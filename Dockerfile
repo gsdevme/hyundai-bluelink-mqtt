@@ -21,7 +21,9 @@ WORKDIR /
 
 COPY --from=build /out/hyundai-bluelink-mqtt /hyundai-bluelink-mqtt
 
-# Prod defaults: persist tokens to a Kubernetes Secret. The health/probe port.
+# Prod defaults: target the real Bluelink API and persist tokens to a Kubernetes
+# Secret. The health/probe port.
+ENV MODE=live
 ENV TOKEN_STORE=kube
 EXPOSE 8080
 

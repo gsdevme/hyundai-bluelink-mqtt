@@ -11,7 +11,7 @@ and documents what the deploy repo must provide.
 - Runtime stage: `gcr.io/distroless/static:nonroot`. Runs as **non-root**, read-only
   root filesystem friendly (no disk writes — tokens go to the K8s Secret).
 - Single binary with subcommands: default `CMD ["serve"]`; `mock` also available.
-- Default env in the image: `TOKEN_STORE=kube`.
+- Default env in the image: `MODE=live`, `TOKEN_STORE=kube`.
 - Exposes the health port (`HEALTH_ADDR`, default `:8080`).
 
 ## Token persistence (stateless-friendly)

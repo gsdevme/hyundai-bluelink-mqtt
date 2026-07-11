@@ -17,20 +17,25 @@ See [`docs/specs/`](docs/specs) for the full design and
 
 ## Quick start (local)
 
+`.env.dist` ships `MODE=mock`, so a fresh clone runs the full pipeline against the
+bundled mock — no Bluelink credentials needed:
+
 ```sh
-cp .env.dist .env            # fill in real Bluelink + MQTT values
-go run ./cmd serve           # poll -> MQTT service
-go run ./cmd mock --addr :8090   # standalone mock Bluelink API
+cp .env.dist .env                # ships MODE=mock (credentials ignored)
+go run ./cmd mock                # terminal 1: mock Bluelink API (add --ccs1 for CCS1)
+go run ./cmd serve               # terminal 2: poll -> MQTT (needs a broker at :1883)
 ```
 
-Point `BLUELINK_BASE_URL`/`BLUELINK_LOGIN_URL` at the mock to run the full pipeline
-against a local Mosquitto without the real API.
+Set `MODE=live` (and real `BLUELINK_USERNAME`/`BLUELINK_PASSWORD`) in `.env` to poll the
+real car instead. For a non-default mock port, run `mock --addr :PORT` and set
+`MOCK_URL` to match.
 
 ## Configuration
 
 All via environment variables (a local `.env` is loaded automatically). See
-[`docs/specs/05-config.md`](docs/specs/05-config.md). Required:
-`BLUELINK_USERNAME`, `BLUELINK_PASSWORD`, `MQTT_BROKER_URL`.
+[`docs/specs/05-config.md`](docs/specs/05-config.md). `MQTT_BROKER_URL` is always
+required; `BLUELINK_USERNAME`/`BLUELINK_PASSWORD` are required only when `MODE=live`.
+`MODE` selects the target (`live` real API / `mock` local mock).
 
 ## Status & health
 

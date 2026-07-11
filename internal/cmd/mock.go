@@ -19,9 +19,9 @@ var mockCmd = &cobra.Command{
 	Use:   "mock",
 	Short: "Run the standalone Bluelink EU mock API server",
 	Long: "Serves canned Inster responses so the full pipeline can run without " +
-		"the real Bluelink API. Point BLUELINK_BASE_URL and BLUELINK_LOGIN_URL at " +
-		"this server's address. Serves a CCS2 vehicle by default; pass --ccs1 to " +
-		"simulate an older CCS1 vehicle instead.",
+		"the real Bluelink API. Run serve with MODE=mock (set MOCK_URL if this " +
+		"server is not on the default :8090). Serves a CCS2 vehicle by default; " +
+		"pass --ccs1 to simulate an older CCS1 vehicle instead.",
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		logger := newLogger("info", "text")
 		opts := mock.Defaults()

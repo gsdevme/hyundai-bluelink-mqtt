@@ -33,6 +33,9 @@ func runServe(ctx context.Context) error {
 	}
 	logger := newLogger(cfg.LogLevel, cfg.LogFormat)
 	logger.Info("starting", "config", cfg.String())
+	if cfg.Mode == "mock" {
+		logger.Warn("running in MOCK mode; not using the real Bluelink API")
+	}
 
 	// Status/health server listens immediately so probes work during init.
 	status := server.New(server.Config{

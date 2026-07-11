@@ -66,5 +66,5 @@ MQTT topics/payloads and readiness:
 - `go build ./... && go vet ./...` clean.
 - `go test ./...` — unit green.
 - `go test ./features/...` — godog acceptance green.
-- The `mock` subcommand + `serve` against a local Mosquitto for a real end-to-end
-  smoke test into Home Assistant.
+- The `mock` subcommand + `serve` with `MODE=mock` against a local Mosquitto for a real
+  end-to-end smoke test into Home Assistant (`.env.dist` ships `MODE=mock`).

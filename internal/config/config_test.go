@@ -94,6 +94,67 @@ func TestForceRefreshTimezone(t *testing.T) {
 	}
 }
 
+func TestModeLiveDefault(t *testing.T) {
+	setEnv(t, nil) // MODE unset
+	c, err := Load()
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if c.Mode != "live" {
+		t.Errorf("mode = %q, want live", c.Mode)
+	}
+	if c.BluelinkBaseURL != "" || c.BluelinkLoginURL != "" {
+		t.Errorf("live hosts should be empty, got base=%q login=%q", c.BluelinkBaseURL, c.BluelinkLoginURL)
+	}
+}
+
+func TestModeMockResolvesDefaultURL(t *testing.T) {
+	// Empty creds must be accepted in mock mode.
+	setEnv(t, map[string]string{"MODE": "mock", "BLUELINK_USERNAME": "", "BLUELINK_PASSWORD": ""})
+	c, err := Load()
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if c.BluelinkBaseURL != defaultMockURL || c.BluelinkLoginURL != defaultMockURL {
+		t.Errorf("mock hosts = base=%q login=%q, want %q", c.BluelinkBaseURL, c.BluelinkLoginURL, defaultMockURL)
+	}
+	if c.BluelinkUsername == "" || c.BluelinkPassword == "" {
+		t.Errorf("mock should supply dummy creds, got user=%q pass=%q", c.BluelinkUsername, c.BluelinkPassword)
+	}
+}
+
+func TestModeMockCustomURL(t *testing.T) {
+	const custom = "http://localhost:9000"
+	setEnv(t, map[string]string{"MODE": "mock", "MOCK_URL": custom})
+	c, err := Load()
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if c.BluelinkBaseURL != custom || c.BluelinkLoginURL != custom {
+		t.Errorf("mock hosts = base=%q login=%q, want %q", c.BluelinkBaseURL, c.BluelinkLoginURL, custom)
+	}
+}
+
+func TestModeLiveRequiresCreds(t *testing.T) {
+	setEnv(t, map[string]string{"MODE": "live", "BLUELINK_USERNAME": "", "BLUELINK_PASSWORD": ""})
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for missing creds in live mode")
+	}
+	for _, want := range []string{"BLUELINK_USERNAME", "BLUELINK_PASSWORD"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error missing %s: %v", want, err)
+		}
+	}
+}
+
+func TestModeBogus(t *testing.T) {
+	setEnv(t, map[string]string{"MODE": "bogus"})
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "MODE") {
+		t.Fatalf("expected MODE validation error, got %v", err)
+	}
+}
+
 func TestRedaction(t *testing.T) {
 	setEnv(t, map[string]string{
 		"BLUELINK_VIN":      "SECRETVIN",

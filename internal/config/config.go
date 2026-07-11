@@ -16,6 +16,10 @@ import (
 // and accidental car-wake pressure.
 const MinPollInterval = 5 * time.Minute
 
+// defaultMockURL is the mock target used when MODE=mock and MOCK_URL is unset.
+// Must match the mock command's default --addr :8090 (see internal/cmd/mock.go).
+const defaultMockURL = "http://localhost:8090"
+
 // Config is the fully-parsed, validated service configuration.
 type Config struct {
 	// Bluelink
@@ -23,8 +27,9 @@ type Config struct {
 	BluelinkPassword string
 	BluelinkVIN      string
 	BluelinkPIN      string
-	BluelinkBaseURL  string // SPA host override (tests/mock)
-	BluelinkLoginURL string // login host override (tests/mock)
+	Mode             string // "live" | "mock"; resolves the Bluelink targets below
+	BluelinkBaseURL  string // resolved SPA host: empty in live, MOCK_URL in mock
+	BluelinkLoginURL string // resolved login host: empty in live, MOCK_URL in mock
 
 	// Polling & scheduling
 	PollInterval                  time.Duration
@@ -61,8 +66,6 @@ func Load() (*Config, error) {
 		BluelinkPassword:              os.Getenv("BLUELINK_PASSWORD"),
 		BluelinkVIN:                   os.Getenv("BLUELINK_VIN"),
 		BluelinkPIN:                   os.Getenv("BLUELINK_PIN"),
-		BluelinkBaseURL:               os.Getenv("BLUELINK_BASE_URL"),
-		BluelinkLoginURL:              os.Getenv("BLUELINK_LOGIN_URL"),
 		ForceRefreshOnlyWhenPluggedIn: getBool("FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN", false),
 		MQTTBrokerURL:                 os.Getenv("MQTT_BROKER_URL"),
 		MQTTUsername:                  os.Getenv("MQTT_USERNAME"),
@@ -79,11 +82,34 @@ func Load() (*Config, error) {
 
 	var errs []error
 
-	if c.BluelinkUsername == "" {
-		errs = append(errs, errors.New("BLUELINK_USERNAME is required"))
+	// Resolve the target: live uses the real Hyundai hosts (empty overrides),
+	// mock points both hosts at the local mock server.
+	c.Mode = strings.ToLower(getEnv("MODE", "live"))
+	switch c.Mode {
+	case "live":
+		// leave Bluelink hosts empty -> bluelink.New() uses the real Hyundai hosts
+	case "mock":
+		mockURL := getEnv("MOCK_URL", defaultMockURL)
+		c.BluelinkBaseURL, c.BluelinkLoginURL = mockURL, mockURL
+		// mock ignores credentials; supply dummies so bluelink.New() doesn't reject them
+		if c.BluelinkUsername == "" {
+			c.BluelinkUsername = "mock"
+		}
+		if c.BluelinkPassword == "" {
+			c.BluelinkPassword = "mock"
+		}
+	default:
+		errs = append(errs, fmt.Errorf("MODE must be live or mock, got %q", c.Mode))
 	}
-	if c.BluelinkPassword == "" {
-		errs = append(errs, errors.New("BLUELINK_PASSWORD is required"))
+
+	// Credentials are only required against the real API; mock supplies dummies above.
+	if c.Mode == "live" {
+		if c.BluelinkUsername == "" {
+			errs = append(errs, errors.New("BLUELINK_USERNAME is required"))
+		}
+		if c.BluelinkPassword == "" {
+			errs = append(errs, errors.New("BLUELINK_PASSWORD is required"))
+		}
 	}
 	if c.MQTTBrokerURL == "" {
 		errs = append(errs, errors.New("MQTT_BROKER_URL is required"))
@@ -152,9 +178,13 @@ func (c *Config) parseForceRefresh() error {
 
 // String renders the config with secrets redacted (safe to log).
 func (c *Config) String() string {
-	return fmt.Sprintf("Config{user=%s vin=%s poll=%s forceRefresh=%v@%02d:%02d %s pluggedGate=%v "+
+	mode := c.Mode
+	if c.Mode == "mock" {
+		mode = fmt.Sprintf("mock(%s)", c.BluelinkBaseURL)
+	}
+	return fmt.Sprintf("Config{mode=%s user=%s vin=%s poll=%s forceRefresh=%v@%02d:%02d %s pluggedGate=%v "+
 		"broker=%s topicPrefix=%s haPrefix=%s tokenStore=%s secret=%s health=%s log=%s/%s}",
-		c.BluelinkUsername, redact(c.BluelinkVIN), c.PollInterval, c.ForceRefreshEnabled,
+		mode, c.BluelinkUsername, redact(c.BluelinkVIN), c.PollInterval, c.ForceRefreshEnabled,
 		c.ForceRefreshHour, c.ForceRefreshMinute, locName(c.ForceRefreshLocation), c.ForceRefreshOnlyWhenPluggedIn,
 		c.MQTTBrokerURL, c.MQTTTopicPrefix, c.HADiscoveryPrefix, c.TokenStore, c.TokenSecretName,
 		c.HealthAddr, c.LogLevel, c.LogFormat)

@@ -91,6 +91,10 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-CF-03** `POLL_INTERVAL` floor enforced. → `config.go`
 - **REQ-CF-04** Secrets redacted in logs/String(). → `config.go`
 - **REQ-CF-05** `godotenv` loads local `.env`; `.env.dist` template committed. → `cmd/root.go`, `.env.dist`
+- **REQ-CF-06** `MODE` (`live`|`mock`) resolves the Bluelink target: `live` uses the
+  real hosts (empty overrides), `mock` points both at `MOCK_URL` and drops the
+  credential requirement (dummies supplied). Code/image default `live`; `.env.dist`
+  ships `mock`. → `config.go`, `.env.dist`, `Dockerfile`
 
 ## Lifecycle & health (`internal/server`, `cmd`, `main.go`)
 
