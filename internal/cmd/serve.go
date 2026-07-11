@@ -92,6 +92,7 @@ func runServe(ctx context.Context) error {
 		VIN:             vehicle.VIN,
 		Model:           vehicle.Model,
 		Name:            vehicle.Name,
+		DistanceUnit:    cfg.DistanceUnit,
 	}
 	mc, err := mqtt.Connect(ctx, mqtt.Options{
 		BrokerURL:         cfg.MQTTBrokerURL,

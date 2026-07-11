@@ -38,6 +38,27 @@ func TestLoadDefaults(t *testing.T) {
 	if c.TokenStore != "memory" {
 		t.Errorf("token store = %s", c.TokenStore)
 	}
+	if c.DistanceUnit != "km" {
+		t.Errorf("distance unit = %s, want km", c.DistanceUnit)
+	}
+}
+
+func TestDistanceUnit(t *testing.T) {
+	setEnv(t, map[string]string{"DISTANCE_UNIT": "MI"})
+	c, err := Load()
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if c.DistanceUnit != "mi" {
+		t.Errorf("distance unit = %q, want mi (lowercased)", c.DistanceUnit)
+	}
+}
+
+func TestBadDistanceUnit(t *testing.T) {
+	setEnv(t, map[string]string{"DISTANCE_UNIT": "miles"})
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "DISTANCE_UNIT") {
+		t.Fatalf("expected DISTANCE_UNIT validation error, got %v", err)
+	}
 }
 
 func TestMissingRequired(t *testing.T) {

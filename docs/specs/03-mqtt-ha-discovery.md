@@ -52,6 +52,10 @@ Every config payload includes:
 | `ev_battery_soh` | Battery health | — | `measurement` | `%` | diagnostic |
 | `last_updated` | Last updated | `timestamp` | — | — | diagnostic |
 
+`ev_range` unit is set from `DISTANCE_UNIT` (`km`/`mi`, default `km`) — a label only; the
+value is published as the car reports it, unconverted. `odometer` is always `km` (the API
+reports odometer in km regardless of the driver's display unit).
+
 `odometer` uses `state_class: total` (not `total_increasing`) to tolerate resets.
 
 `binary_sensor`:
