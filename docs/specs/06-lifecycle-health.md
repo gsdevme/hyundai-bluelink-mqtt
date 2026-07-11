@@ -27,7 +27,7 @@ running service. It renders, from a concurrency-safe snapshot:
 
 - service name and readiness (ready / not ready);
 - uptime (`time.Since(startedAt)`, rounded to the second);
-- selected vehicle — model, nickname, CCS2 flag, and the **VIN masked to its last 4**
+- selected vehicle — model, nickname, CCS2 flag, and the **VIN masked to its last character**
   (rendered as "initialising" until vehicle selection completes, since the server
   listens before selection);
 - schedule — poll interval and the daily force-refresh time + location (or "disabled");

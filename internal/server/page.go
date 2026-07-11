@@ -83,7 +83,7 @@ var statusTmpl = template.Must(template.New("status").Parse(`<!DOCTYPE html>
 `))
 
 // handleRoot renders the HTML status page. It always returns 200 and never
-// exposes credentials; the VIN is masked to its last 4 characters.
+// exposes credentials; the VIN is masked to its last character.
 func (s *Server) handleRoot(w http.ResponseWriter, _ *http.Request) {
 	s.mu.Lock()
 	view := statusView{
@@ -194,10 +194,10 @@ func trimFloat(v float64) string {
 	return strconv.FormatFloat(v, 'f', -1, 64)
 }
 
-// maskVIN keeps only the last 4 characters of a VIN, replacing the rest with
+// maskVIN keeps only the last character of a VIN, replacing the rest with
 // asterisks so the full identifier is never shown.
 func maskVIN(vin string) string {
-	const keep = 4
+	const keep = 1
 	if len(vin) <= keep {
 		return vin
 	}

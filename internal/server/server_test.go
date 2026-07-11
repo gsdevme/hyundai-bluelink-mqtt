@@ -78,8 +78,8 @@ func TestRootStatusPage(t *testing.T) {
 	if !strings.Contains(page, "not ready") {
 		t.Fatalf("page missing readiness status:\n%s", page)
 	}
-	if !strings.Contains(page, "0001") {
-		t.Fatalf("page missing masked VIN suffix:\n%s", page)
+	if !strings.Contains(page, maskVIN("REDACTEDVIN000001")) {
+		t.Fatalf("page missing masked VIN:\n%s", page)
 	}
 	if strings.Contains(page, "REDACTEDVIN000001") {
 		t.Fatalf("page leaked the full VIN:\n%s", page)
