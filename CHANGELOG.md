@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/gsdevme/hyundai-bluelink-mqtt/compare/v1.1.0...v1.1.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **bluelink:** convert EV range to the configured distance unit ([9eb34e3](https://github.com/gsdevme/hyundai-bluelink-mqtt/commit/9eb34e31ee204aeb70a3e7fc15867342242e9f98))
+
 ## [1.1.0](https://github.com/gsdevme/hyundai-bluelink-mqtt/compare/v1.0.1...v1.1.0) (2026-07-11)
 
 
