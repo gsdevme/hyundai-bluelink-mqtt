@@ -1,0 +1,11 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:alpine
+    # Mosquitto 2.x defaults to a localhost-only listener with anonymous access
+    # denied; the image ships this config to open :1883 for local development.
+    command: mosquitto -c /mosquitto-no-auth.conf
+    ports:
+      # 1883 matches MQTT_BROKER_URL in .env.dist. If the port is already taken
+      # (another broker, an ssh tunnel), export MQTT_PORT=1884 and point
+      # MQTT_BROKER_URL at it rather than binding over whatever is there.
+      - "${MQTT_PORT:-1883}:1883"
