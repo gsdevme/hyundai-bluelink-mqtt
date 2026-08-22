@@ -29,10 +29,15 @@ type Entity struct {
 
 // Entities returns the full catalogue published for a vehicle. distanceUnit
 // ("km"/"mi", defaulting to "km" when empty) sets the HA label for the Range and
-// Odometer sensors. For Range it is a label only — the car reports range in its own
-// display unit and we publish that number unconverted. For Odometer the published
-// value is converted to distanceUnit (see VehicleState.InDistanceUnit), because the
-// API reports the odometer in km regardless of the driver's display unit.
+// Odometer sensors, whose published values are both converted to it from the unit
+// the API reported them in (see VehicleState.InDistanceUnit) — so label and value
+// always agree.
+//
+// Note that this controls what is *published*, not necessarily what Home Assistant
+// *displays*: HA re-converts any device_class "distance" sensor into its instance
+// unit system, so a Metric HA renders a "mi" sensor in km. Overriding that is a
+// per-entity registry setting on the HA side; MQTT discovery has no
+// suggested_unit_of_measurement key to do it from here.
 func Entities(distanceUnit string) []Entity {
 	if distanceUnit == "" {
 		distanceUnit = "km"

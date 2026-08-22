@@ -91,10 +91,13 @@ func TestPublishStateNoLocation(t *testing.T) {
 }
 
 func TestPublishStateOdometerDistanceUnit(t *testing.T) {
-	odoOf := func(s *Service) any {
+	stateOf := func(s *Service) map[string]any {
 		rp := NewRecordingPublisher()
 		s.pub = rp
-		st := bluelink.VehicleState{Odometer: fp(14213), OdometerUnit: "km"}
+		st := bluelink.VehicleState{
+			Odometer: fp(14213), OdometerUnit: "km",
+			EVRange: fp(259.99), EVRangeUnit: "km",
+		}
 		if err := s.PublishState(t.Context(), st); err != nil {
 			t.Fatalf("state: %v", err)
 		}
@@ -106,22 +109,34 @@ func TestPublishStateOdometerDistanceUnit(t *testing.T) {
 		if err := json.Unmarshal(rec.Payload, &got); err != nil {
 			t.Fatalf("state payload: %v", err)
 		}
-		return got["odometer"]
+		return got
 	}
 
-	// Default (km) publishes the raw km value untouched.
+	check := func(t *testing.T, got map[string]any, wantOdo, wantRange float64, wantUnit string) {
+		t.Helper()
+		if v := got["odometer"]; v != wantOdo {
+			t.Errorf("odometer = %v, want %v", v, wantOdo)
+		}
+		if v := got["odometer_unit"]; v != wantUnit {
+			t.Errorf("odometer_unit = %v, want %q", v, wantUnit)
+		}
+		if v := got["ev_range"]; v != wantRange {
+			t.Errorf("ev_range = %v, want %v", v, wantRange)
+		}
+		if v := got["ev_range_unit"]; v != wantUnit {
+			t.Errorf("ev_range_unit = %v, want %q", v, wantUnit)
+		}
+	}
+
+	// Default (km) publishes the raw km values untouched.
 	s, _ := newService()
-	if v := odoOf(s); v != 14213.0 {
-		t.Errorf("km odometer = %v, want 14213", v)
-	}
+	check(t, stateOf(s), 14213.0, 259.99, "km")
 
-	// DISTANCE_UNIT=mi converts the value (14213 km -> 8831.5 mi, 1 dp).
+	// DISTANCE_UNIT=mi converts both values (14213 km -> 8831.5 mi,
+	// 259.99 km -> 161.6 mi, 1 dp) and relabels them.
 	cfg := s.cfg
 	cfg.DistanceUnit = "mi"
-	s = New(nil, cfg)
-	if v := odoOf(s); v != 8831.5 {
-		t.Errorf("mi odometer = %v, want 8831.5", v)
-	}
+	check(t, stateOf(New(nil, cfg)), 8831.5, 161.6, "mi")
 }
 
 func TestPublishAvailability(t *testing.T) {

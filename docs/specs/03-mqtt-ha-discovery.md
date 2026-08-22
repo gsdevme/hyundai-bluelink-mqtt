@@ -53,10 +53,19 @@ Every config payload includes:
 | `last_updated` | Last updated | `timestamp` | — | — | diagnostic |
 
 Both `ev_range` and `odometer` units are set from `DISTANCE_UNIT` (`km`/`mi`, default
-`km`). For `ev_range` it is a label only — the value is published as the car reports it,
-unconverted. For `odometer` the published value is **converted** to `DISTANCE_UNIT`
-(rounded to 1 dp) because the API reports the odometer in km regardless of the driver's
-display unit, so a label-only change would mislabel the number.
+`km`), and **both values are converted** to it (rounded to 1 dp) from the unit the API
+reported, so label and number always agree. The odometer arrives in km regardless of the
+driver's display unit; the range follows that display unit and so may be either. A value
+whose source unit the API did not report is published unconverted and keeps its unknown
+unit — it is never relabelled.
+
+> **Display vs. published.** `DISTANCE_UNIT` controls what this service *publishes*, not
+> necessarily what Home Assistant *shows*. HA re-converts any `device_class: distance`
+> sensor into its own unit system, so a Metric HA instance renders a `mi` sensor in km.
+> MQTT discovery has no `suggested_unit_of_measurement` key, so this cannot be overridden
+> from the payload: set the per-entity **Unit of Measurement** override in the HA entity
+> registry (Settings → Devices & Services → Entities → entity → gear), or change the
+> instance unit system.
 
 `odometer` uses `state_class: total` (not `total_increasing`) to tolerate resets.
 

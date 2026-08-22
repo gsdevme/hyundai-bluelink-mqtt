@@ -48,7 +48,7 @@ type Config struct {
 	MQTTClientID      string
 	MQTTTopicPrefix   string
 	HADiscoveryPrefix string
-	DistanceUnit      string // "km" | "mi"; Range HA label (no value conversion) + odometer value+label
+	DistanceUnit      string // "km" | "mi"; value + HA label for both range and odometer
 
 	// Tokens
 	TokenStore      string // "memory" | "kube"
