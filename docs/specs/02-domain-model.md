@@ -2,7 +2,9 @@
 
 `internal/bluelink` exposes two clean internal types the rest of the app consumes:
 `Vehicle` (identity + protocol flag) and `VehicleState` (the metrics snapshot).
-Units are **normalised on ingest** so the publisher never converts.
+Temperatures are **normalised on ingest** (always °C). Distances keep the unit the API
+reported (`EVRangeUnit`, `OdometerUnit`) and are converted once, at publish time, by
+`VehicleState.InDistanceUnit(DISTANCE_UNIT)` — see [05-config.md](05-config.md).
 
 ## `Vehicle`
 
@@ -59,7 +61,10 @@ The snapshot published to MQTT. Pointer/`*T` fields (or an `Optional[T]`) distin
 - **Charge-port door.** `Green.ChargingDoor.State`: `1`→open; `0` or `2`→closed;
   anything else→unknown.
 - **Distance unit index** (`DISTANCE_UNITS`): `1`→`km`, `2`/`3`→`mi`, `0`/absent→
-  unknown. Odometer is always km (`DISTANCE_UNITS[1]`).
+  unknown. The CCS2 odometer is always km (`DISTANCE_UNITS[1]`); the range follows the
+  driver's display setting, so it can be either. Both are converted to `DISTANCE_UNIT`
+  at publish time; a value whose source unit is unknown is published unconverted and
+  keeps its (empty) unit rather than being relabelled.
 - **Temperature unit index** (`TEMPERATURE_UNITS`): `0`→°C, `1`→°F. Values that are
   already °C pass through; °F is converted to °C on ingest so the model is always °C.
   Inside temp value `"OFF"` (HVAC off) ⇒ leave `nil`.

@@ -132,9 +132,8 @@ func TestDistanceUnitFromConfig(t *testing.T) {
 		t.Errorf("default odometer unit = %v, want km", u)
 	}
 
-	// DistanceUnit=mi labels both Range and Odometer mi. (Range is a label-only
-	// change; the odometer value is converted at publish time — see the publisher
-	// and bluelink.InDistanceUnit tests.)
+	// DistanceUnit=mi labels both Range and Odometer mi. Both values are converted
+	// to match at publish time — see the publisher and bluelink.InDistanceUnit tests.
 	cfg := testConfig()
 	cfg.DistanceUnit = "mi"
 	msgs, err := BuildDiscovery(cfg)

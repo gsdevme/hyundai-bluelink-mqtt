@@ -27,7 +27,7 @@ no-op in prod where the file is absent). `.env.dist` is the committed template;
 | `MQTT_CLIENT_ID` | `hyundai-bluelink-mqtt` | no | MQTT client id. |
 | `MQTT_TOPIC_PREFIX` | `hyundai_bluelink` | no | Base topic prefix (VIN appended). |
 | `HA_DISCOVERY_PREFIX` | `homeassistant` | no | HA discovery prefix. |
-| `DISTANCE_UNIT` | `km` | no | `km` or `mi`. Sets the `ev_range` HA label (no value conversion) and both the `odometer` label and value (converted to the unit, rounded to 1 dp). |
+| `DISTANCE_UNIT` | `km` | no | `km` or `mi`. Sets the HA label **and** the published value for both `ev_range` and `odometer` (converted from the API's reported unit, rounded to 1 dp). Controls what is published; HA re-converts imperial distance sensors on a Metric instance — see [03-mqtt-ha-discovery.md](03-mqtt-ha-discovery.md). |
 | `TOKEN_STORE` | `memory` (local) / `kube` (image) | no | `memory` or `kube`. |
 | `TOKEN_SECRET_NAME` | — | if `kube` | Name of the K8s Secret holding tokens. |
 | `HEALTH_ADDR` | `:8080` | no | Listen address for `/healthz` and `/readyz`. |

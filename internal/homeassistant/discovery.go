@@ -12,7 +12,7 @@ type Config struct {
 	VIN             string
 	Model           string // e.g. "INSTER"
 	Name            string // device name (nickname or default)
-	DistanceUnit    string // "km" | "mi"; Range sensor label (defaults to "km")
+	DistanceUnit    string // "km" | "mi"; Range + Odometer sensor label (defaults to "km")
 }
 
 // Message is a single MQTT publish (topic + payload); discovery messages are

@@ -64,23 +64,36 @@ type VehicleState struct {
 	LastUpdatedAt *time.Time `json:"last_updated,omitempty"`
 }
 
-// InDistanceUnit returns a copy of the state with the odometer converted to unit
-// ("km"/"mi") and OdometerUnit set to it. Unlike range — which the car already
-// reports in its display unit and we publish unconverted — the odometer value is
-// genuinely in its OdometerUnit (km for CCS2), so honouring DISTANCE_UNIT needs a
-// real conversion. Returns the state unchanged when unit is empty, the odometer is
-// absent, or it already matches unit (preserving the raw reported value); otherwise
-// the converted value is rounded to 1 dp. The new value goes through a fresh pointer
-// so the caller's state is never mutated.
+// InDistanceUnit returns a copy of the state with the odometer and the EV range
+// converted to unit ("km"/"mi"), each with its unit field set to match. Both values
+// are genuinely in their own reported unit — the odometer in km for CCS2, the range
+// in whatever the driver's display is set to — so honouring DISTANCE_UNIT needs a
+// real conversion of each, not just a relabel. Returns the state unchanged when unit
+// is empty; individual values are left alone (see convertDistanceField) when absent,
+// already in unit, or of unknown source unit.
 func (s VehicleState) InDistanceUnit(unit string) VehicleState {
-	if unit == "" || s.Odometer == nil || s.OdometerUnit == unit {
+	if unit == "" {
 		return s
 	}
-	v := convertDistance(*s.Odometer, s.OdometerUnit, unit)
-	v = math.Round(v*10) / 10
-	s.Odometer = &v
-	s.OdometerUnit = unit
+	s.Odometer, s.OdometerUnit = convertDistanceField(s.Odometer, s.OdometerUnit, unit)
+	s.EVRange, s.EVRangeUnit = convertDistanceField(s.EVRange, s.EVRangeUnit, unit)
 	return s
+}
+
+// convertDistanceField converts an optional distance from unit `from` to unit `to`,
+// returning the new value (rounded to 1 dp, through a fresh pointer so the caller's
+// state is never mutated) and the unit it is now in.
+//
+// Absent values, already-matching units and — importantly — unknown source units are
+// passed through untouched. Stamping `to` onto a value we could not convert is
+// exactly how a kilometre reading ends up labelled "mi", which Home Assistant then
+// "converts" to a number 1.6x too large.
+func convertDistanceField(value *float64, from, to string) (*float64, string) {
+	if value == nil || from == "" || from == to {
+		return value, from
+	}
+	v := math.Round(convertDistance(*value, from, to)*10) / 10
+	return &v, to
 }
 
 // Tokens is the persisted authentication state, round-tripped through a
