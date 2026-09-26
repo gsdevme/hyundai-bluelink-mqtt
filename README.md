@@ -5,8 +5,8 @@ Bluelink EU** API and republishes battery, range, charging and location metrics 
 **MQTT** with **Home Assistant autodiscovery**. Designed for Kubernetes (manifests live
 in a separate repo).
 
-- **stdlib-first**, latest Go (`go1.26.2`). Only unavoidable deps: cobra, autopaho,
-  godotenv, client-go, godog (test-only).
+- **stdlib-first**, latest Go (`go1.27.1`; local builds need macOS 13+). Only unavoidable
+  deps: cobra, autopaho, godotenv, client-go, godog (test-only).
 - **Read-only** — no remote commands. Regular polling reads **cached** state only and
   never wakes the car; an optional daily force-refresh wakes it once.
 - **CCS2 and CCS1** protocols; the vehicle's `ccuCCS2ProtocolSupport` selects the parser
