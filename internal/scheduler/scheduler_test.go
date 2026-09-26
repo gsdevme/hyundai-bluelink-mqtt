@@ -122,8 +122,7 @@ func TestDailyForceRefreshFires(t *testing.T) {
 		go func() { s.Run(ctx); close(done) }()
 
 		synctest.Wait() // initial poll
-		time.Sleep(6 * time.Hour)
-		synctest.Wait()
+		synctest.Sleep(6 * time.Hour)
 
 		_, forced := f.counts()
 		if forced != 1 {
@@ -150,8 +149,7 @@ func TestForceSkippedWhenUnplugged(t *testing.T) {
 		go func() { s.Run(ctx); close(done) }()
 
 		synctest.Wait()
-		time.Sleep(6 * time.Hour)
-		synctest.Wait()
+		synctest.Sleep(6 * time.Hour)
 
 		_, forced := f.counts()
 		if forced != 0 {
@@ -175,8 +173,7 @@ func TestTransientRetrySucceeds(t *testing.T) {
 
 		// The immediate poll fails twice, backing off 1s then 2s. Advance the
 		// fake clock past the backoff so the retry succeeds.
-		time.Sleep(10 * time.Second)
-		synctest.Wait()
+		synctest.Sleep(10 * time.Second)
 
 		if p.publishCount() != 1 {
 			t.Fatalf("publish count = %d, want 1 after retries", p.publishCount())
