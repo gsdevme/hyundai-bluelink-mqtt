@@ -77,9 +77,10 @@ func parseCCS2(state map[string]any) VehicleState {
 	return s
 }
 
-// allDoorsLocked reports whether every present door is locked. In CCS2 the "Lock"
-// field is truthy when the door is *unlocked*, so locked = !truthy. Returns nil
-// when any door's state is absent.
+// allDoorsLocked reports whether all four doors are locked. In CCS2 a truthy
+// "Lock" value means the door is *unlocked* (the reference library computes each
+// door as `not bool(Lock)`), so the car is locked only when every Lock is 0.
+// Returns nil when any door's state is absent.
 func allDoorsLocked(state map[string]any) *bool {
 	paths := []string{
 		"Cabin.Door.Row1.Driver.Lock",
@@ -88,19 +89,14 @@ func allDoorsLocked(state map[string]any) *bool {
 		"Cabin.Door.Row2.Right.Lock",
 	}
 	locked := true
-	seen := 0
 	for _, p := range paths {
 		v := getInt(state, p)
 		if v == nil {
 			return nil
 		}
-		seen++
-		if *v != 0 { // truthy => unlocked
+		if *v != 0 {
 			locked = false
 		}
-	}
-	if seen == 0 {
-		return nil
 	}
 	return &locked
 }

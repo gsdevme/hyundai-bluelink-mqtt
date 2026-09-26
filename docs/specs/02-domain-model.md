@@ -44,7 +44,7 @@ The snapshot published to MQTT. Pointer/`*T` fields (or an `Optional[T]`) distin
 | `OdometerUnit` | `string` | fixed `km` (`DISTANCE_UNITS[1]`) | |
 | `OutsideTemperatureC` | `*float64` | `Cabin.HVAC.OutsideTemperature.Value` (+`.Unit`→°C) | °C |
 | `InsideTemperatureC` | `*float64` | `Cabin.HVAC.Row1.Driver.Temperature.Value` (+`.Unit`) | °C; skip if `"OFF"` |
-| `Locked` | `*bool` | all `Cabin.Door.*.Lock` truthy ⇒ locked | AND of the four doors |
+| `Locked` | `*bool` | all four `Cabin.Door.*.Lock` falsy (`0`) ⇒ locked; any truthy value ⇒ that door unlocked | AND of the four doors; the reference library inverts the raw value (`not bool(Lock)`); nil if any door absent |
 | `TirePressureWarning` | `*bool` | `Chassis.Axle.Tire.PressureLow` OR any per-axle `PressureLow` | |
 | `Latitude` | `*float64` | `location/park` `resMsg.coord.lat` (fallback `Location.GeoCoord.Latitude`) | |
 | `Longitude` | `*float64` | `location/park` `resMsg.coord.lon` (fallback `Location.GeoCoord.Longitude`) | |
