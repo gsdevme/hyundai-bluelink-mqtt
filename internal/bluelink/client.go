@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"uuid"
 )
 
 // Config configures a Client. Only Username and Password are required; the host
@@ -156,7 +157,7 @@ func (c *Client) registerDevice(ctx context.Context) (string, error) {
 	payload := map[string]string{
 		"pushRegId": randomHex(32),
 		"pushType":  pushType,
-		"uuid":      randomUUID(),
+		"uuid":      uuid.NewV4().String(),
 	}
 	body, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.spaAPI+"notifications/register", bytes.NewReader(body))
@@ -356,12 +357,4 @@ func randomHex(n int) string {
 	b := make([]byte, n)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
-}
-
-func randomUUID() string {
-	var b [16]byte
-	_, _ = rand.Read(b[:])
-	b[6] = (b[6] & 0x0f) | 0x40 // version 4
-	b[8] = (b[8] & 0x3f) | 0x80 // variant 10
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }
