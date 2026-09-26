@@ -38,7 +38,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
   `/location/park` (`resMsg.gpsDetail`); odometer stays nil until the next cached poll.
   → `status.go`
 - **REQ-BL-17** Hidden `dump` diagnostic command captures raw API responses via the
-  normal auth/stamp/refresh path (`Client.DebugGet`). → `cmd/dump.go`, `client.go`
+  normal auth/stamp/refresh path (`Client.DebugGet`). → `internal/cmd/dump.go`, `client.go`
 
 ## Domain model (`internal/bluelink`)
 
@@ -88,7 +88,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-SC-04** Daily force refresh at `FORCE_REFRESH_AT`/`FORCE_REFRESH_TZ` via
   `time.LoadLocation`; DST-safe daily recompute. → `scheduler.go`
 - **REQ-SC-05** Force refresh optionally gated on plugged-in (cached pre-check). → `scheduler.go`
-- **REQ-SC-06** `_ "time/tzdata"` imported so zones work in distroless. → `cmd/root.go`
+- **REQ-SC-06** `_ "time/tzdata"` imported so zones work in distroless. → `internal/cmd/root.go`
 - **REQ-SC-07** Cached poll and force refresh never overlap (serialised). → `scheduler.go`
 
 ## Config (`internal/config`)
@@ -97,7 +97,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-CF-02** Fail-fast validation (required present; duration/time/tz/URL parse). → `config.go`
 - **REQ-CF-03** `POLL_INTERVAL` floor enforced. → `config.go`
 - **REQ-CF-04** Secrets redacted in logs/String(). → `config.go`
-- **REQ-CF-05** `godotenv` loads local `.env`; `.env.dist` template committed. → `cmd/root.go`, `.env.dist`
+- **REQ-CF-05** `godotenv` loads local `.env`; `.env.dist` template committed. → `internal/cmd/root.go`, `.env.dist`
 - **REQ-CF-06** `MODE` (`live`|`mock`) resolves the Bluelink target: `live` uses the
   real hosts (empty overrides), `mock` points both at `MOCK_URL` and drops the
   credential requirement (dummies supplied). Code/image default `live`; `.env.dist`
@@ -108,16 +108,16 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
   unrelabelled); validated fail-fast. → `config.go`, `homeassistant/entities.go`,
   `bluelink/model.go` (`VehicleState.InDistanceUnit`)
 
-## Lifecycle & health (`internal/server`, `cmd`, `main.go`)
+## Lifecycle & health (`internal/server`, `internal/cmd`, `cmd/main.go`)
 
 - **REQ-LC-01** `/healthz` liveness always-ok while running. → `internal/server`
 - **REQ-LC-02** `/readyz` ready after first successful publish. → `internal/server`
 - **REQ-LC-03** `/readyz` not-ready after `READY_FAILURE_THRESHOLD` consecutive
   failures; recovers on success. → `internal/server`, `scheduler.go`
-- **REQ-LC-04** Structured `log/slog` logging; level/format configurable; no secrets. → `cmd/root.go`
+- **REQ-LC-04** Structured `log/slog` logging; level/format configurable; no secrets. → `internal/cmd/root.go`
 - **REQ-LC-05** Graceful shutdown: explicit retained `offline` publish, clean
-  `Disconnect()`, then exit. → `cmd/serve.go`
-- **REQ-LC-06** Status/health server listens during init so probes work at startup. → `cmd/serve.go`
+  `Disconnect()`, then exit. → `internal/cmd/serve.go`
+- **REQ-LC-06** Status/health server listens during init so probes work at startup. → `internal/cmd/serve.go`
 - **REQ-LC-07** Root `/` HTML status page: service, readiness, uptime, vehicle
   (VIN masked to last character), schedule, Go version; always `200`, no secrets. → `internal/server`
 - **REQ-LC-08** Root `/` page renders live non-personal vehicle metrics from the latest
@@ -137,7 +137,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 ## Testing (`internal/mock`, `features`)
 
 - **REQ-TS-01** Mock server implements all EU endpoints with Inster CCS2 fixtures. → `mock/server.go`
-- **REQ-TS-02** Mock is shared by godog and the standalone `mock` subcommand. → `mock/server.go`, `cmd/mock.go`
+- **REQ-TS-02** Mock is shared by godog and the standalone `mock` subcommand. → `mock/server.go`, `internal/cmd/mock.go`
 - **REQ-TS-03** godog scenarios: startup discovery, cached poll state, token refresh,
   daily force refresh (+ unplugged skip), graceful degradation, graceful shutdown. → `features/*.feature`
 - **REQ-TS-04** Unit tests for `stamp`, `jwk`, `parse_ccs2`, discovery, config. → `*_test.go`
