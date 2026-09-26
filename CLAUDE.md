@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A stdlib-first Go service (go1.26.2) that polls a **Hyundai Inster (2026)** EV via the
+A stdlib-first Go service (go1.27.1) that polls a **Hyundai Inster (2026)** EV via the
 **Hyundai Bluelink EU** API and republishes battery/range/charging/location metrics to
 **MQTT** with **Home Assistant autodiscovery**. Read-only — it never sends remote
 commands and never wakes the car except via an optional once-daily force refresh.

@@ -5,7 +5,7 @@ and documents what the deploy repo must provide.
 
 ## Container
 
-- Multi-stage `Dockerfile`. Build stage: `golang:1.26` (or matching), `CGO_ENABLED=0`,
+- Multi-stage `Dockerfile`. Build stage: `golang:1.27` (or matching), `CGO_ENABLED=0`,
   static binary, `-ldflags "-s -w"`, `-trimpath`. Import `_ "time/tzdata"` so timezone
   data is embedded (no OS tzdata in the runtime image).
 - Runtime stage: `gcr.io/distroless/static:nonroot`. Runs as **non-root**, read-only

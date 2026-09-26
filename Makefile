@@ -2,8 +2,10 @@ BINARY := hyundai-bluelink-mqtt
 BIN_DIR := bin
 PKG     := ./cmd
 
-GOLANGCI_LINT_VERSION := v2.12.2
-GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
+# The binary path carries the version so bumping the pin invalidates the cached
+# build and `make lint` reinstalls it instead of running a stale linter.
+GOLANGCI_LINT_VERSION := v2.14.0
+GOLANGCI_LINT := $(BIN_DIR)/golangci-lint-$(GOLANGCI_LINT_VERSION)
 
 .PHONY: build run run-mock test test-e2e lint
 
@@ -30,6 +32,7 @@ run-mock: build
 $(GOLANGCI_LINT):
 	GOBIN=$(abspath $(BIN_DIR)) go install \
 	  github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	mv $(BIN_DIR)/golangci-lint $@
 
 ## lint: run golangci-lint (installs the pinned binary into ./bin on first use)
 lint: $(GOLANGCI_LINT)

@@ -13,7 +13,7 @@ Deployed to Kubernetes (manifests live in a **separate repo**; none in this repo
 
 - **Spec-driven.** These `docs/specs/*` are authored first and are the source of truth.
   Code is reconciled against `REQUIREMENTS.md` via `/spec-reconcile`.
-- **stdlib-first.** Latest Go (**go1.26.2**). Only unavoidable external deps:
+- **stdlib-first.** Latest Go (**go1.27.1**). Only unavoidable external deps:
   MQTT client (`paho.golang`), CLI (`cobra`), `.env` loader (`godotenv`), in-cluster
   token store (`client-go`) and BDD runner (`godog`, test-only). All core logic —
   HTTP, crypto, JSON, big-int, scheduling, logging — is stdlib.
