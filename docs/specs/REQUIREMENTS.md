@@ -95,7 +95,7 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 ## Config (`internal/config`)
 
 - **REQ-CF-01** All env vars in `05-config.md` bound with defaults. → `config.go`
-- **REQ-CF-02** Fail-fast validation (required present; duration/time/tz/URL parse). → `config.go`
+- **REQ-CF-02** Fail-fast validation (required present; duration/int/bool/time/tz parse; strict `HH:MM`; `LOG_LEVEL`/`LOG_FORMAT` enums; `MQTT_BROKER_URL` scheme+host). → `config.go`
 - **REQ-CF-03** `POLL_INTERVAL` floor enforced. → `config.go`
 - **REQ-CF-04** Secrets redacted in logs/String(). → `config.go`
 - **REQ-CF-05** `godotenv` loads local `.env`; `.env.dist` template committed. → `internal/cmd/root.go`, `.env.dist`

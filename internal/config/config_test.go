@@ -190,3 +190,87 @@ func TestRedaction(t *testing.T) {
 		}
 	}
 }
+
+func TestRejectsMalformedValues(t *testing.T) {
+	cases := []struct {
+		name, key, value, want string
+	}{
+		{"bad int threshold", "READY_FAILURE_THRESHOLD", "abc", "READY_FAILURE_THRESHOLD"},
+		{"bad int retries", "POLL_MAX_RETRIES", "x", "POLL_MAX_RETRIES"},
+		{"bad bool", "FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN", "yes", "FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN"},
+		{"broker without scheme", "MQTT_BROKER_URL", "localhost:1883", "MQTT_BROKER_URL"},
+		{"broker without host", "MQTT_BROKER_URL", "mqtt://", "MQTT_BROKER_URL"},
+		{"broker path only", "MQTT_BROKER_URL", "/just/a/path", "MQTT_BROKER_URL"},
+		{"bad log level", "LOG_LEVEL", "verbose", "LOG_LEVEL"},
+		{"bad log format", "LOG_FORMAT", "yaml", "LOG_FORMAT"},
+		{"single digit hour", "FORCE_REFRESH_AT", "5:00", "FORCE_REFRESH_AT"},
+		{"single digit minute", "FORCE_REFRESH_AT", "05:0", "FORCE_REFRESH_AT"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			setEnv(t, map[string]string{tc.key: tc.value})
+			_, err := Load()
+			if err == nil {
+				t.Fatalf("expected error for %s=%q", tc.key, tc.value)
+			}
+			if !strings.Contains(err.Error(), tc.want) || !strings.Contains(err.Error(), tc.value) {
+				t.Errorf("error %q should name %s and the bad value %q", err, tc.want, tc.value)
+			}
+		})
+	}
+}
+
+func TestAcceptsWellFormedValues(t *testing.T) {
+	cases := []struct {
+		name, key, value string
+		check            func(*Config) bool
+	}{
+		{"bool true", "FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN", "true", func(c *Config) bool { return c.ForceRefreshOnlyWhenPluggedIn }},
+		{"bool 1", "FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN", "1", func(c *Config) bool { return c.ForceRefreshOnlyWhenPluggedIn }},
+		{"bool false", "FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN", "false", func(c *Config) bool { return !c.ForceRefreshOnlyWhenPluggedIn }},
+		{"int threshold", "READY_FAILURE_THRESHOLD", "7", func(c *Config) bool { return c.ReadyFailureThreshold == 7 }},
+		{"int retries", "POLL_MAX_RETRIES", "0", func(c *Config) bool { return c.PollMaxRetries == 0 }},
+		{"two digit time", "FORCE_REFRESH_AT", "05:00", func(c *Config) bool { return c.ForceRefreshHour == 5 && c.ForceRefreshMinute == 0 }},
+		{"late time", "FORCE_REFRESH_AT", "23:59", func(c *Config) bool { return c.ForceRefreshHour == 23 && c.ForceRefreshMinute == 59 }},
+		{"mqtt broker", "MQTT_BROKER_URL", "mqtt://host:1883", func(c *Config) bool { return c.MQTTBrokerURL == "mqtt://host:1883" }},
+		{"tcp broker", "MQTT_BROKER_URL", "tcp://host", func(c *Config) bool { return c.MQTTBrokerURL == "tcp://host" }},
+		{"level debug", "LOG_LEVEL", "debug", func(c *Config) bool { return c.LogLevel == "debug" }},
+		{"level info", "LOG_LEVEL", "info", func(c *Config) bool { return c.LogLevel == "info" }},
+		{"level warn", "LOG_LEVEL", "WARN", func(c *Config) bool { return c.LogLevel == "warn" }},
+		{"level error", "LOG_LEVEL", "error", func(c *Config) bool { return c.LogLevel == "error" }},
+		{"format json", "LOG_FORMAT", "json", func(c *Config) bool { return c.LogFormat == "json" }},
+		{"format text", "LOG_FORMAT", "Text", func(c *Config) bool { return c.LogFormat == "text" }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			setEnv(t, map[string]string{tc.key: tc.value})
+			c, err := Load()
+			if err != nil {
+				t.Fatalf("%s=%q: unexpected error: %v", tc.key, tc.value, err)
+			}
+			if !tc.check(c) {
+				t.Errorf("%s=%q not applied: %s", tc.key, tc.value, c)
+			}
+		})
+	}
+}
+
+func TestBrokerURLErrorRedactsPassword(t *testing.T) {
+	cases := map[string]string{
+		"missing host":   "mqtt://user:hunter2@",
+		"invalid port":   "mqtt://user:hunter2@host:abc",
+		"percent escape": "mqtt://user:hunter2@host/%zz",
+	}
+	for name, raw := range cases {
+		t.Run(name, func(t *testing.T) {
+			setEnv(t, map[string]string{"MQTT_BROKER_URL": raw})
+			_, err := Load()
+			if err == nil || !strings.Contains(err.Error(), "MQTT_BROKER_URL") {
+				t.Fatalf("expected MQTT_BROKER_URL error, got %v", err)
+			}
+			if strings.Contains(err.Error(), "hunter2") {
+				t.Errorf("error leaks broker password: %q", err)
+			}
+		})
+	}
+}

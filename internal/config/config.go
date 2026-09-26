@@ -63,23 +63,22 @@ type Config struct {
 // Load reads configuration from the environment, applies defaults and validates.
 func Load() (*Config, error) {
 	c := &Config{
-		BluelinkUsername:              os.Getenv("BLUELINK_USERNAME"),
-		BluelinkPassword:              os.Getenv("BLUELINK_PASSWORD"),
-		BluelinkVIN:                   os.Getenv("BLUELINK_VIN"),
-		BluelinkPIN:                   os.Getenv("BLUELINK_PIN"),
-		ForceRefreshOnlyWhenPluggedIn: getBool("FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN", false),
-		MQTTBrokerURL:                 os.Getenv("MQTT_BROKER_URL"),
-		MQTTUsername:                  os.Getenv("MQTT_USERNAME"),
-		MQTTPassword:                  os.Getenv("MQTT_PASSWORD"),
-		MQTTClientID:                  getEnv("MQTT_CLIENT_ID", "hyundai-bluelink-mqtt"),
-		MQTTTopicPrefix:               getEnv("MQTT_TOPIC_PREFIX", "hyundai_bluelink"),
-		HADiscoveryPrefix:             getEnv("HA_DISCOVERY_PREFIX", "homeassistant"),
-		DistanceUnit:                  strings.ToLower(getEnv("DISTANCE_UNIT", "km")),
-		TokenStore:                    strings.ToLower(getEnv("TOKEN_STORE", "memory")),
-		TokenSecretName:               os.Getenv("TOKEN_SECRET_NAME"),
-		HealthAddr:                    getEnv("HEALTH_ADDR", ":8080"),
-		LogLevel:                      strings.ToLower(getEnv("LOG_LEVEL", "info")),
-		LogFormat:                     strings.ToLower(getEnv("LOG_FORMAT", "json")),
+		BluelinkUsername:  os.Getenv("BLUELINK_USERNAME"),
+		BluelinkPassword:  os.Getenv("BLUELINK_PASSWORD"),
+		BluelinkVIN:       os.Getenv("BLUELINK_VIN"),
+		BluelinkPIN:       os.Getenv("BLUELINK_PIN"),
+		MQTTBrokerURL:     os.Getenv("MQTT_BROKER_URL"),
+		MQTTUsername:      os.Getenv("MQTT_USERNAME"),
+		MQTTPassword:      os.Getenv("MQTT_PASSWORD"),
+		MQTTClientID:      getEnv("MQTT_CLIENT_ID", "hyundai-bluelink-mqtt"),
+		MQTTTopicPrefix:   getEnv("MQTT_TOPIC_PREFIX", "hyundai_bluelink"),
+		HADiscoveryPrefix: getEnv("HA_DISCOVERY_PREFIX", "homeassistant"),
+		DistanceUnit:      strings.ToLower(getEnv("DISTANCE_UNIT", "km")),
+		TokenStore:        strings.ToLower(getEnv("TOKEN_STORE", "memory")),
+		TokenSecretName:   os.Getenv("TOKEN_SECRET_NAME"),
+		HealthAddr:        getEnv("HEALTH_ADDR", ":8080"),
+		LogLevel:          strings.ToLower(getEnv("LOG_LEVEL", "info")),
+		LogFormat:         strings.ToLower(getEnv("LOG_FORMAT", "json")),
 	}
 
 	var errs []error
@@ -115,8 +114,8 @@ func Load() (*Config, error) {
 	}
 	if c.MQTTBrokerURL == "" {
 		errs = append(errs, errors.New("MQTT_BROKER_URL is required"))
-	} else if _, err := url.Parse(c.MQTTBrokerURL); err != nil {
-		errs = append(errs, fmt.Errorf("MQTT_BROKER_URL is invalid: %w", err))
+	} else if err := validateBrokerURL(c.MQTTBrokerURL); err != nil {
+		errs = append(errs, err)
 	}
 
 	interval, err := parseDuration("POLL_INTERVAL", 45*time.Minute)
@@ -127,13 +126,18 @@ func Load() (*Config, error) {
 	}
 	c.PollInterval = interval
 
-	c.ReadyFailureThreshold = getInt("READY_FAILURE_THRESHOLD", 3)
-	if c.ReadyFailureThreshold < 1 {
+	if c.ReadyFailureThreshold, err = getInt("READY_FAILURE_THRESHOLD", 3); err != nil {
+		errs = append(errs, err)
+	} else if c.ReadyFailureThreshold < 1 {
 		errs = append(errs, errors.New("READY_FAILURE_THRESHOLD must be >= 1"))
 	}
-	c.PollMaxRetries = getInt("POLL_MAX_RETRIES", 3)
-	if c.PollMaxRetries < 0 {
+	if c.PollMaxRetries, err = getInt("POLL_MAX_RETRIES", 3); err != nil {
+		errs = append(errs, err)
+	} else if c.PollMaxRetries < 0 {
 		errs = append(errs, errors.New("POLL_MAX_RETRIES must be >= 0"))
+	}
+	if c.ForceRefreshOnlyWhenPluggedIn, err = getBool("FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN", false); err != nil {
+		errs = append(errs, err)
 	}
 
 	if err := c.parseForceRefresh(); err != nil {
@@ -144,6 +148,18 @@ func Load() (*Config, error) {
 	case "km", "mi":
 	default:
 		errs = append(errs, fmt.Errorf("DISTANCE_UNIT must be km or mi, got %q", c.DistanceUnit))
+	}
+
+	switch c.LogLevel {
+	case "debug", "info", "warn", "error":
+	default:
+		errs = append(errs, fmt.Errorf("LOG_LEVEL must be debug, info, warn or error, got %q", c.LogLevel))
+	}
+
+	switch c.LogFormat {
+	case "json", "text":
+	default:
+		errs = append(errs, fmt.Errorf("LOG_FORMAT must be json or text, got %q", c.LogFormat))
 	}
 
 	switch c.TokenStore {
@@ -162,6 +178,9 @@ func Load() (*Config, error) {
 	return c, nil
 }
 
+// parseForceRefresh resolves FORCE_REFRESH_AT/FORCE_REFRESH_TZ. An empty
+// FORCE_REFRESH_AT disables the daily refresh; otherwise it must be a strict
+// two-digit HH:MM, since the "15:04" layout alone also accepts "5:00".
 func (c *Config) parseForceRefresh() error {
 	at := getEnv("FORCE_REFRESH_AT", "05:00")
 	if at == "" {
@@ -169,7 +188,7 @@ func (c *Config) parseForceRefresh() error {
 		return nil
 	}
 	t, err := time.Parse("15:04", at)
-	if err != nil {
+	if err != nil || len(at) != len("15:04") {
 		return fmt.Errorf("FORCE_REFRESH_AT must be HH:MM, got %q", at)
 	}
 	tzName := getEnv("FORCE_REFRESH_TZ", "UTC")
@@ -219,28 +238,52 @@ func getEnv(key, def string) string {
 	return def
 }
 
-func getBool(key string, def bool) bool {
+// validateBrokerURL requires an absolute URL with both a scheme and a host, so
+// that a bare "host:port" (which url.Parse reads as scheme "host") is rejected.
+// The raw URL never appears in the error: url.Parse failures are reported by
+// their inner cause, since *url.Error formats the unredacted input, and the
+// scheme/host check prints the redacted form.
+func validateBrokerURL(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil {
+		var uerr *url.Error
+		if errors.As(err, &uerr) {
+			err = uerr.Err
+		}
+		return fmt.Errorf("MQTT_BROKER_URL is invalid: %w", err)
+	}
+	if u.Scheme == "" || u.Host == "" {
+		return fmt.Errorf("MQTT_BROKER_URL must include a scheme and host (e.g. mqtt://host:1883), got %q", u.Redacted())
+	}
+	return nil
+}
+
+// getBool returns def when key is unset, otherwise the strconv.ParseBool value;
+// an unparseable value is an error naming the variable.
+func getBool(key string, def bool) (bool, error) {
 	v := os.Getenv(key)
 	if v == "" {
-		return def
+		return def, nil
 	}
 	b, err := strconv.ParseBool(v)
 	if err != nil {
-		return def
+		return false, fmt.Errorf("%s must be a boolean (true/false/1/0), got %q", key, v)
 	}
-	return b
+	return b, nil
 }
 
-func getInt(key string, def int) int {
+// getInt returns def when key is unset, otherwise the strconv.Atoi value; an
+// unparseable value is an error naming the variable.
+func getInt(key string, def int) (int, error) {
 	v := os.Getenv(key)
 	if v == "" {
-		return def
+		return def, nil
 	}
 	n, err := strconv.Atoi(v)
 	if err != nil {
-		return def
+		return 0, fmt.Errorf("%s must be an integer, got %q", key, v)
 	}
-	return n
+	return n, nil
 }
 
 func parseDuration(key string, def time.Duration) (time.Duration, error) {
