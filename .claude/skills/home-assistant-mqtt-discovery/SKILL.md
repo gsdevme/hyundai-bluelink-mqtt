@@ -33,8 +33,11 @@ point every entity at it with a `value_template`:
 ```
 
 Benefits: fewer topics, atomic multi-value updates, one retained message to restore
-full state. Booleans render via `{{ 'ON' if value_json.charging else 'OFF' }}` with
-`payload_on: ON` / `payload_off: OFF`.
+full state. Booleans render via
+`{{ ('ON' if value_json.charging else 'OFF') if value_json.charging is defined and value_json.charging is not none else 'None' }}`
+with `payload_on: ON` / `payload_off: OFF`. Rendering the literal `None` for an absent
+or null key resets HA state to unknown (sensors use the same guard around
+`value_json.<key>`), instead of a falsy `OFF` or an undefined-template error.
 
 ## The `~` base-topic abbreviation
 

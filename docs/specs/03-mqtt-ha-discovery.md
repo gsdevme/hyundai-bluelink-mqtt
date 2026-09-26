@@ -8,8 +8,9 @@ below; `internal/homeassistant` implements them.
 - **Discovery prefix** `homeassistant` (configurable via `HA_DISCOVERY_PREFIX`).
 - **Base topic** per vehicle: `hyundai_bluelink/{vin}` (configurable via `MQTT_TOPIC_PREFIX`).
 - **Single retained JSON state topic** per vehicle: `{base}/state`. All numeric/boolean
-  entities read from it via `value_template` (`{{ value_json.<key> }}`). This is the
-  HA-recommended shared-state pattern: fewer topics, atomic updates.
+  entities read from it via `value_template`
+  (`{{ value_json.<key> if value_json.<key> is defined and value_json.<key> is not none else 'None' }}`).
+  This is the HA-recommended shared-state pattern: fewer topics, atomic updates.
 - **Availability topic**: `{base}/availability` — payload `online`/`offline`, retained.
 - **Per-entity discovery** topics: `homeassistant/<component>/{vin}_{key}/config`,
   retained. `unique_id` and `object_id` = `{vin}_{key}`.
@@ -80,9 +81,11 @@ unit — it is never relabelled.
 | `charge_port_door` | Charge port | `door` | `true`/`false` | diagnostic |
 
 Binary sensors read booleans from the JSON state topic via `value_template`
-(`{{ 'ON' if value_json.<key> else 'OFF' }}`), `payload_on: ON`, `payload_off: OFF`.
-For `locked`, HA `lock` device_class expects `ON`=unlocked/`OFF`=locked — the template
-inverts (`ON` when not locked).
+(`{{ ('ON' if value_json.<key> else 'OFF') if value_json.<key> is defined and value_json.<key> is not none else 'None' }}`),
+`payload_on: ON`, `payload_off: OFF`. For `locked`, HA `lock` device_class expects
+`ON`=unlocked/`OFF`=locked — the template inverts (`('OFF' if value_json.locked else 'ON')`,
+i.e. `ON` when not locked). Like every sensor template, it renders `None` when the key
+is absent or null, so HA shows unknown rather than a misleading `OFF` (or "Unlocked").
 
 `device_tracker` (key `location`):
 - `state_topic: ~/tracker/state` (`home`/`not_home`/`None`; a real value, not coords).
@@ -105,7 +108,10 @@ inverts (`ON` when not locked).
 
 - The state document is a single JSON object with the `VehicleState` keys above (snake
   case matching the entity `value_template`s). Absent/unknown fields are omitted or
-  `null` (HA renders "unknown").
+  `null`. Every entity `value_template` guards its key and renders the literal `None`
+  when the key is absent or null, which HA's MQTT sensor and binary_sensor treat as
+  "reset to unknown" — so HA shows unknown instead of an undefined-template error or a
+  falsy `OFF`.
 - Discovery payloads use HA **abbreviations** where standard (`~`, `stat_t`, `avty_t`,
   `dev`, `uniq_id`, `dev_cla`, `stat_cla`, `unit_of_meas`, `val_tpl`, `ent_cat`) to
   keep payloads compact; unabbreviated keys are acceptable too (skill documents both).
