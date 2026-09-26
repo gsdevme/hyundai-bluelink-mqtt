@@ -85,11 +85,9 @@ func New(f StatusFetcher, p StatePublisher, h HealthReporter, cfg Config) *Sched
 // Run starts both loops and blocks until ctx is cancelled.
 func (s *Scheduler) Run(ctx context.Context) {
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() { defer wg.Done(); s.pollLoop(ctx) }()
+	wg.Go(func() { s.pollLoop(ctx) })
 	if s.cfg.ForceEnabled {
-		wg.Add(1)
-		go func() { defer wg.Done(); s.forceLoop(ctx) }()
+		wg.Go(func() { s.forceLoop(ctx) })
 	}
 	wg.Wait()
 }

@@ -6,8 +6,6 @@ import (
 )
 
 func TestVehicleStateInDistanceUnit(t *testing.T) {
-	f := func(v float64) *float64 { return &v }
-
 	tests := []struct {
 		name     string
 		odo      *float64
@@ -16,12 +14,12 @@ func TestVehicleStateInDistanceUnit(t *testing.T) {
 		wantOdo  *float64 // nil means "expect Odometer stays nil"
 		wantUnit string
 	}{
-		{"km to mi converts and rounds", f(14213), "km", "mi", f(8831.5), "mi"},
-		{"km to mi fractional source", f(14213.5), "km", "mi", f(8831.9), "mi"},
-		{"mi to km converts", f(8832), "mi", "km", f(14213.7), "km"},
-		{"same unit unchanged", f(14213.5), "km", "km", f(14213.5), "km"},
-		{"empty target unchanged", f(14213), "km", "", f(14213), "km"},
-		{"unknown source keeps value and unit", f(14213), "", "mi", f(14213), ""},
+		{"km to mi converts and rounds", new(14213.0), "km", "mi", new(8831.5), "mi"},
+		{"km to mi fractional source", new(14213.5), "km", "mi", new(8831.9), "mi"},
+		{"mi to km converts", new(8832.0), "mi", "km", new(14213.7), "km"},
+		{"same unit unchanged", new(14213.5), "km", "km", new(14213.5), "km"},
+		{"empty target unchanged", new(14213.0), "km", "", new(14213.0), "km"},
+		{"unknown source keeps value and unit", new(14213.0), "", "mi", new(14213.0), ""},
 		{"nil value unchanged", nil, "km", "mi", nil, "km"},
 	}
 
@@ -63,16 +61,14 @@ func assertDistance(t *testing.T, name string, got *float64, gotUnit string, wan
 // distances arrive in different units — the CCS2 case, where the odometer is always
 // km but the range follows the driver's display setting.
 func TestVehicleStateInDistanceUnitBothFields(t *testing.T) {
-	f := func(v float64) *float64 { return &v }
-
 	st := VehicleState{
-		Odometer: f(14213), OdometerUnit: "km",
-		EVRange: f(259.99), EVRangeUnit: "km",
+		Odometer: new(14213.0), OdometerUnit: "km",
+		EVRange: new(259.99), EVRangeUnit: "km",
 	}
 	got := st.InDistanceUnit("mi")
 
-	assertDistance(t, "Odometer", got.Odometer, got.OdometerUnit, f(8831.5), "mi")
-	assertDistance(t, "EVRange", got.EVRange, got.EVRangeUnit, f(161.6), "mi")
+	assertDistance(t, "Odometer", got.Odometer, got.OdometerUnit, new(8831.5), "mi")
+	assertDistance(t, "EVRange", got.EVRange, got.EVRangeUnit, new(161.6), "mi")
 }
 
 // TestVehicleStateInDistanceUnitNoMutation guards against the value receiver

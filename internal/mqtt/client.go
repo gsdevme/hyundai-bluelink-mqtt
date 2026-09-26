@@ -63,7 +63,7 @@ func Connect(ctx context.Context, opts Options) (*Client, error) {
 			opts.Logger.Info("mqtt connected")
 			c.fireOnUp(ctx)
 		},
-		ClientConfig: paho.ClientConfig{ClientID: opts.ClientID},
+		ClientID: opts.ClientID,
 	}
 	if opts.AvailabilityTopic != "" {
 		//nolint:staticcheck // SA1019: helper still encodes the correct WillProperties defaults for our LWT.

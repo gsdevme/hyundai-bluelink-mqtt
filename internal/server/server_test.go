@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 func TestReadinessLifecycle(t *testing.T) {
 	s := New(Config{ReadyFailureThreshold: 3})
 	if s.Ready() {
@@ -93,22 +91,22 @@ var personalMarkers = []string{"latitude", "longitude", "odometer", "Locked", "l
 func TestRootMetricsSection(t *testing.T) {
 	updated := time.Date(2026, 7, 11, 8, 30, 0, 0, time.UTC)
 	full := Metrics{
-		EVBatteryPercentage:      ptr(82.0),
-		EVBatterySoH:             ptr(99.5),
-		EVRange:                  ptr(240.0),
+		EVBatteryPercentage:      new(82.0),
+		EVBatterySoH:             new(99.5),
+		EVRange:                  new(240.0),
 		EVRangeUnit:              "km",
-		Charging:                 ptr(true),
-		PluggedIn:                ptr(true),
-		ChargePortDoorOpen:       ptr(false),
-		ChargeLimitAC:            ptr(80.0),
-		ChargeLimitDC:            ptr(100.0),
-		ChargingPowerKW:          ptr(7.4),
-		EstChargeDurationMin:     ptr(120),
-		EstFastChargeDurationMin: ptr(35),
-		Battery12VPercentage:     ptr(90),
-		OutsideTemperatureC:      ptr(18.5),
-		InsideTemperatureC:       ptr(21.0),
-		TirePressureWarning:      ptr(false),
+		Charging:                 new(true),
+		PluggedIn:                new(true),
+		ChargePortDoorOpen:       new(false),
+		ChargeLimitAC:            new(80.0),
+		ChargeLimitDC:            new(100.0),
+		ChargingPowerKW:          new(7.4),
+		EstChargeDurationMin:     new(120),
+		EstFastChargeDurationMin: new(35),
+		Battery12VPercentage:     new(90),
+		OutsideTemperatureC:      new(18.5),
+		InsideTemperatureC:       new(21.0),
+		TirePressureWarning:      new(false),
 		LastUpdatedAt:            &updated,
 	}
 
@@ -152,7 +150,7 @@ func TestRootMetricsSection(t *testing.T) {
 			name: "partially nil renders unknown",
 			set:  true,
 			metrics: Metrics{
-				EVBatteryPercentage: ptr(50.0),
+				EVBatteryPercentage: new(50.0),
 				// EVRange nil with a unit set must not render "unknown km".
 				EVRangeUnit: "km",
 			},
