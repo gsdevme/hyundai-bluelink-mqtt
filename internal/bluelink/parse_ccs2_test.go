@@ -103,20 +103,18 @@ func TestParseCCS2Inster(t *testing.T) {
 }
 
 func TestNormalizeBatterySoC(t *testing.T) {
-	fp := func(v float64) *float64 { return &v }
-	ip := func(v int) *int { return &v }
 	tests := []struct {
 		name        string
 		value       *float64
 		reliability *int
 		want        *int
 	}{
-		{"valid", fp(87), ip(0), ip(87)},
-		{"unreliable", fp(87), ip(1), nil},
-		{"sentinel 255", fp(255), ip(0), nil},
-		{"negative", fp(-1), nil, nil},
+		{"valid", new(87.0), new(0), new(87)},
+		{"unreliable", new(87.0), new(1), nil},
+		{"sentinel 255", new(255.0), new(0), nil},
+		{"negative", new(-1.0), nil, nil},
 		{"missing", nil, nil, nil},
-		{"boundary 100", fp(100), nil, ip(100)},
+		{"boundary 100", new(100.0), nil, new(100)},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

@@ -85,7 +85,7 @@ func (k *kubeSecretStore) Save(ctx context.Context, t Tokens) error {
 	}
 	// Optimistic concurrency: read the current resourceVersion, update, and
 	// retry once on conflict (single replica ⇒ conflicts are rare).
-	for attempt := 0; attempt < 2; attempt++ {
+	for attempt := range 2 {
 		sec, err := k.client.CoreV1().Secrets(k.namespace).Get(ctx, k.name, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("get token secret for update: %w", err)

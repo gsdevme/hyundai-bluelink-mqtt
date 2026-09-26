@@ -36,9 +36,9 @@ func parseCCS2(state map[string]any) VehicleState {
 	if v := getInt(state, "Green.ChargingDoor.State"); v != nil {
 		switch *v {
 		case 1:
-			s.ChargePortDoorOpen = boolPtr(true)
+			s.ChargePortDoorOpen = new(true)
 		case 0, 2:
-			s.ChargePortDoorOpen = boolPtr(false)
+			s.ChargePortDoorOpen = new(false)
 		}
 	}
 
@@ -215,7 +215,7 @@ func parseCCS2Date(s string) (time.Time, bool) {
 // is missing or not a map.
 func getPath(m map[string]any, path string) any {
 	var cur any = m
-	for _, seg := range strings.Split(path, ".") {
+	for seg := range strings.SplitSeq(path, ".") {
 		asMap, ok := cur.(map[string]any)
 		if !ok {
 			return nil
@@ -266,5 +266,3 @@ func asFloat(v any) (float64, bool) {
 		return 0, false
 	}
 }
-
-func boolPtr(b bool) *bool { return &b }

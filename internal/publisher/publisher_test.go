@@ -8,9 +8,6 @@ import (
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/homeassistant"
 )
 
-func fp(v float64) *float64 { return &v }
-func bp(v bool) *bool       { return &v }
-
 func newService() (*Service, *RecordingPublisher) {
 	rp := NewRecordingPublisher()
 	cfg := homeassistant.Config{
@@ -40,10 +37,10 @@ func TestPublishDiscoveryRetained(t *testing.T) {
 func TestPublishStateJSONAndTracker(t *testing.T) {
 	s, rp := newService()
 	st := bluelink.VehicleState{
-		EVBatteryPercentage: fp(62),
-		Charging:            bp(true),
-		Latitude:            fp(51.5),
-		Longitude:           fp(-0.12),
+		EVBatteryPercentage: new(62.0),
+		Charging:            new(true),
+		Latitude:            new(51.5),
+		Longitude:           new(-0.12),
 	}
 	if err := s.PublishState(t.Context(), st); err != nil {
 		t.Fatalf("state: %v", err)
@@ -81,7 +78,7 @@ func TestPublishStateJSONAndTracker(t *testing.T) {
 
 func TestPublishStateNoLocation(t *testing.T) {
 	s, rp := newService()
-	if err := s.PublishState(t.Context(), bluelink.VehicleState{EVBatteryPercentage: fp(50)}); err != nil {
+	if err := s.PublishState(t.Context(), bluelink.VehicleState{EVBatteryPercentage: new(50.0)}); err != nil {
 		t.Fatalf("state: %v", err)
 	}
 	trState, ok := rp.Get("hyundai_bluelink/VIN123/tracker/state")
@@ -95,8 +92,8 @@ func TestPublishStateOdometerDistanceUnit(t *testing.T) {
 		rp := NewRecordingPublisher()
 		s.pub = rp
 		st := bluelink.VehicleState{
-			Odometer: fp(14213), OdometerUnit: "km",
-			EVRange: fp(259.99), EVRangeUnit: "km",
+			Odometer: new(14213.0), OdometerUnit: "km",
+			EVRange: new(259.99), EVRangeUnit: "km",
 		}
 		if err := s.PublishState(t.Context(), st); err != nil {
 			t.Fatalf("state: %v", err)

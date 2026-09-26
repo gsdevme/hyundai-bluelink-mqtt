@@ -13,8 +13,6 @@ import (
 	"github.com/gsdevme/hyundai-bluelink-mqtt/internal/server"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 // fakePublisher records the last state and optionally fails.
 type fakePublisher struct {
 	err    error
@@ -34,29 +32,29 @@ func (f *fakePublisher) PublishState(_ context.Context, st bluelink.VehicleState
 func TestMetricsFromState(t *testing.T) {
 	updated := time.Date(2026, 7, 11, 8, 30, 0, 0, time.UTC)
 	st := bluelink.VehicleState{
-		EVBatteryPercentage:      ptr(82.0),
-		EVBatterySoH:             ptr(99.5),
-		EVRange:                  ptr(240.0),
+		EVBatteryPercentage:      new(82.0),
+		EVBatterySoH:             new(99.5),
+		EVRange:                  new(240.0),
 		EVRangeUnit:              "km",
-		Charging:                 ptr(true),
-		PluggedIn:                ptr(true),
-		ChargePortDoorOpen:       ptr(false),
-		ChargeLimitAC:            ptr(80.0),
-		ChargeLimitDC:            ptr(100.0),
-		ChargingPowerKW:          ptr(7.4),
-		EstChargeDurationMin:     ptr(120),
-		EstFastChargeDurationMin: ptr(35),
-		Battery12VPercentage:     ptr(90),
-		OutsideTemperatureC:      ptr(18.5),
-		InsideTemperatureC:       ptr(21.0),
-		TirePressureWarning:      ptr(false),
+		Charging:                 new(true),
+		PluggedIn:                new(true),
+		ChargePortDoorOpen:       new(false),
+		ChargeLimitAC:            new(80.0),
+		ChargeLimitDC:            new(100.0),
+		ChargingPowerKW:          new(7.4),
+		EstChargeDurationMin:     new(120),
+		EstFastChargeDurationMin: new(35),
+		Battery12VPercentage:     new(90),
+		OutsideTemperatureC:      new(18.5),
+		InsideTemperatureC:       new(21.0),
+		TirePressureWarning:      new(false),
 		LastUpdatedAt:            &updated,
 		// Excluded (personal/sensitive) fields — must not surface in Metrics.
-		Odometer:          ptr(12345.0),
+		Odometer:          new(12345.0),
 		OdometerUnit:      "km",
-		Locked:            ptr(true),
-		Latitude:          ptr(51.5),
-		Longitude:         ptr(-0.12),
+		Locked:            new(true),
+		Latitude:          new(51.5),
+		Longitude:         new(-0.12),
 		LocationUpdatedAt: &updated,
 	}
 
@@ -108,7 +106,7 @@ func TestRecordingPublisher(t *testing.T) {
 		status := server.New(server.Config{ReadyFailureThreshold: 1})
 		rp := recordingPublisher{pub: fake, status: status}
 
-		if err := rp.PublishState(context.Background(), bluelink.VehicleState{EVBatteryPercentage: ptr(50.0)}); err != nil {
+		if err := rp.PublishState(t.Context(), bluelink.VehicleState{EVBatteryPercentage: new(50.0)}); err != nil {
 			t.Fatalf("PublishState: %v", err)
 		}
 		if !fake.called {
@@ -125,7 +123,7 @@ func TestRecordingPublisher(t *testing.T) {
 		status := server.New(server.Config{ReadyFailureThreshold: 1})
 		rp := recordingPublisher{pub: fake, status: status}
 
-		err := rp.PublishState(context.Background(), bluelink.VehicleState{EVBatteryPercentage: ptr(50.0)})
+		err := rp.PublishState(t.Context(), bluelink.VehicleState{EVBatteryPercentage: new(50.0)})
 		if !errors.Is(err, wantErr) {
 			t.Fatalf("err = %v, want %v", err, wantErr)
 		}
