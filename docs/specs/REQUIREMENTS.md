@@ -61,7 +61,8 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 - **REQ-HA-01** Per-entity discovery topics `homeassistant/<component>/{vin}_{key}/config`,
   retained, QoS 1. → `homeassistant/discovery.go`
 - **REQ-HA-02** Single retained JSON state topic per vehicle; entities read via
-  `value_template`. → `publisher.go`, `homeassistant/discovery.go`
+  `value_template`; every template renders `None` for an absent or null key so HA shows
+  unknown. → `publisher.go`, `homeassistant/discovery.go`
 - **REQ-HA-03** Shared `device` block (VIN identifier, Hyundai, Inster) + `~` base-topic
   abbreviation. → `homeassistant/discovery.go`
 - **REQ-HA-04** Entity catalogue (sensors, binary_sensors, device_tracker) with correct

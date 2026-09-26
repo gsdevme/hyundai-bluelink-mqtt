@@ -51,7 +51,7 @@ func TestBuildDiscoveryTopicsAndCount(t *testing.T) {
 	if battery["availability_topic"] != "~/availability" {
 		t.Errorf("availability_topic = %v", battery["availability_topic"])
 	}
-	if battery["value_template"] != "{{ value_json.ev_battery_percentage }}" {
+	if battery["value_template"] != "{{ value_json.ev_battery_percentage if value_json.ev_battery_percentage is defined and value_json.ev_battery_percentage is not none else 'None' }}" {
 		t.Errorf("value_template = %v", battery["value_template"])
 	}
 	if battery["device_class"] != "battery" || battery["state_class"] != "measurement" {
@@ -92,19 +92,47 @@ func TestDiagnosticCategory(t *testing.T) {
 	}
 }
 
-func TestBinarySensorTemplates(t *testing.T) {
+func TestValueTemplatesRenderNoneWhenUnknown(t *testing.T) {
+	byTopic := decodeByKey(t, mustBuild(t))
+	cases := []struct {
+		name  string
+		topic string
+		want  string
+	}{
+		{
+			name:  "sensor",
+			topic: "homeassistant/sensor/VIN123_ev_battery_percentage/config",
+			want:  "{{ value_json.ev_battery_percentage if value_json.ev_battery_percentage is defined and value_json.ev_battery_percentage is not none else 'None' }}",
+		},
+		{
+			name:  "binary sensor",
+			topic: "homeassistant/binary_sensor/VIN123_charging/config",
+			want:  "{{ ('ON' if value_json.charging else 'OFF') if value_json.charging is defined and value_json.charging is not none else 'None' }}",
+		},
+		{
+			name:  "inverted binary sensor (lock)",
+			topic: "homeassistant/binary_sensor/VIN123_locked/config",
+			want:  "{{ ('OFF' if value_json.locked else 'ON') if value_json.locked is defined and value_json.locked is not none else 'None' }}",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p, ok := byTopic[tc.topic]
+			if !ok {
+				t.Fatalf("missing discovery topic %s", tc.topic)
+			}
+			if p["value_template"] != tc.want {
+				t.Errorf("value_template = %v, want %v", p["value_template"], tc.want)
+			}
+		})
+	}
+}
+
+func TestBinarySensorDeviceClass(t *testing.T) {
 	byTopic := decodeByKey(t, mustBuild(t))
 	charging := byTopic["homeassistant/binary_sensor/VIN123_charging/config"]
-	if charging["value_template"] != "{{ 'ON' if value_json.charging else 'OFF' }}" {
-		t.Errorf("charging template = %v", charging["value_template"])
-	}
 	if charging["device_class"] != "battery_charging" {
 		t.Errorf("charging device_class = %v", charging["device_class"])
-	}
-	// lock class inverts.
-	locked := byTopic["homeassistant/binary_sensor/VIN123_locked/config"]
-	if locked["value_template"] != "{{ 'OFF' if value_json.locked else 'ON' }}" {
-		t.Errorf("locked template = %v", locked["value_template"])
 	}
 }
 
