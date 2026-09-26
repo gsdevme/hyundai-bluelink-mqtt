@@ -157,3 +157,52 @@ func TestForceFixtureDiffers(t *testing.T) {
 		t.Error("force fixture should report a different battery % to prove refresh took effect")
 	}
 }
+
+// TestAllDoorsLocked pins the CCS2 door polarity: a truthy Lock means the door is
+// unlocked, matching the reference library's `not bool(Lock)`.
+func TestAllDoorsLocked(t *testing.T) {
+	ptr := func(b bool) *bool { return &b }
+	tests := []struct {
+		name  string
+		doors string
+		want  *bool
+	}{
+		{
+			name:  "all four locked",
+			doors: `{"Row1":{"Driver":{"Lock":0},"Passenger":{"Lock":0}},"Row2":{"Left":{"Lock":0},"Right":{"Lock":0}}}`,
+			want:  ptr(true),
+		},
+		{
+			name:  "one door unlocked",
+			doors: `{"Row1":{"Driver":{"Lock":0},"Passenger":{"Lock":1}},"Row2":{"Left":{"Lock":0},"Right":{"Lock":0}}}`,
+			want:  ptr(false),
+		},
+		{
+			name:  "one door absent",
+			doors: `{"Row1":{"Driver":{"Lock":0},"Passenger":{"Lock":0}},"Row2":{"Left":{"Lock":0}}}`,
+			want:  nil,
+		},
+		{
+			name:  "all four unlocked",
+			doors: `{"Row1":{"Driver":{"Lock":1},"Passenger":{"Lock":1}},"Row2":{"Left":{"Lock":1},"Right":{"Lock":1}}}`,
+			want:  ptr(false),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var state map[string]any
+			if err := json.Unmarshal([]byte(`{"Cabin":{"Door":`+tt.doors+`}}`), &state); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			got := allDoorsLocked(state)
+			switch {
+			case tt.want == nil && got != nil:
+				t.Fatalf("got %v, want nil", *got)
+			case tt.want != nil && got == nil:
+				t.Fatalf("got nil, want %v", *tt.want)
+			case tt.want != nil && *got != *tt.want:
+				t.Fatalf("got %v, want %v", *got, *tt.want)
+			}
+		})
+	}
+}
