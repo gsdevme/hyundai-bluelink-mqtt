@@ -156,6 +156,6 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
 
 - **REQ-AS-01** Skill `home-assistant-mqtt-discovery`. → `.claude/skills/...`
 - **REQ-AS-02** Skill `effective-go`. → `.claude/skills/...`
-- **REQ-AS-03** Skill `go-1.26`. → `.claude/skills/...`
+- **REQ-AS-03** Skill `go-1.27`. → `.claude/skills/...`
 - **REQ-AS-04** Command `/spec-reconcile`. → `.claude/commands/spec-reconcile.md`
 - **REQ-AS-05** Planner agent `go-http-pattern-planner`. → `.claude/agents/go-http-pattern-planner.md`
