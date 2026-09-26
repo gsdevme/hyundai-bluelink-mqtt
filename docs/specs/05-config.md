@@ -37,11 +37,20 @@ no-op in prod where the file is absent). `.env.dist` is the committed template;
 ## Validation rules
 
 - Fail fast (exit non-zero with a clear message) when a required var is missing or a
-  duration/time/timezone/URL fails to parse.
+  duration/integer/boolean/time/timezone/URL fails to parse or an enum value is unknown.
 - `MODE` must be `live` or `mock`. In `mock`, both Bluelink hosts resolve to `MOCK_URL`
   and the Bluelink credential requirement is dropped (dummies supplied); in `live`, the
   hosts stay empty so `bluelink.New()` uses the real Hyundai hosts.
-- `FORCE_REFRESH_AT` must match `HH:MM` (00–23:00–59) when set.
+- Integer vars (`READY_FAILURE_THRESHOLD`, `POLL_MAX_RETRIES`) must parse with
+  `strconv.Atoi` and boolean vars (`FORCE_REFRESH_ONLY_WHEN_PLUGGED_IN`) with
+  `strconv.ParseBool`; a malformed value is an error, never a silent fallback to the default.
+- `MQTT_BROKER_URL` must be an absolute URL with both a scheme and a host
+  (e.g. `mqtt://host:1883`); a bare `host:port` is rejected. Any password in the URL is
+  redacted from the error.
+- `LOG_LEVEL` must be one of `debug`/`info`/`warn`/`error` and `LOG_FORMAT` one of
+  `json`/`text` (case-insensitive).
+- `FORCE_REFRESH_AT` must be strict two-digit `HH:MM` (00–23:00–59) when set; `5:00` is
+  rejected.
 - `FORCE_REFRESH_TZ` must load via `time.LoadLocation`.
 - `POLL_INTERVAL` below a floor (default 5m) is rejected to protect against
   rate-limiting and accidental car-wake pressure.
