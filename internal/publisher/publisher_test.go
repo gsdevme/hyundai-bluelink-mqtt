@@ -62,7 +62,7 @@ func TestPublishStateJSONAndTracker(t *testing.T) {
 	}
 
 	trState, ok := rp.Get("hyundai_bluelink/VIN123/tracker/state")
-	if !ok || string(trState.Payload) != "not_home" {
+	if !ok || string(trState.Payload) != "None" {
 		t.Errorf("tracker state = %q", trState.Payload)
 	}
 	trAttr, ok := rp.Get("hyundai_bluelink/VIN123/tracker/attributes")

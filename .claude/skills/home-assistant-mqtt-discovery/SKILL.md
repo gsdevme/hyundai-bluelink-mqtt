@@ -83,7 +83,10 @@ for the entity to be editable in the HA UI.
   `door`, `lock`. Note `lock`: `ON` = unlocked, `OFF` = locked (invert in the template).
 - `device_tracker`: `state` must be `home` / `not_home` / a zone name / `None` — **not**
   coordinates. Publish coordinates via `json_attributes_topic`
-  (`{latitude, longitude, gps_accuracy, source_type: gps}`).
+  (`{latitude, longitude, gps_accuracy, source_type: gps}`). When coordinates are
+  supplied via attributes, the state topic must carry the `payload_reset` value
+  (default `None`): an explicit `home`/`not_home` payload sets `location_name`, which
+  takes precedence over GPS zone resolution and freezes the zone.
 - `entity_category: diagnostic` demotes non-primary entities (SoH, 12V, charge limits,
   charge-port, last-updated) out of the main controls area.
 
@@ -99,6 +102,8 @@ equally valid; don't mix half-and-half within a payload confusingly.
 
 - Forgetting `retain=true` → entities vanish after a broker restart.
 - Publishing coordinates as `device_tracker` **state** → entity shows "unknown".
+- Publishing `not_home` as a "neutral default" alongside GPS attributes → entity is
+  permanently away; publish `payload_reset` (`None`) instead.
 - Reusing a `unique_id` across entities → HA rejects/merges them.
 - `total_increasing` on an odometer → false "reset" energy spikes.
 - Not setting `availability_topic` on entities → they never show "unavailable".
