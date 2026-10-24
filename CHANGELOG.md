@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.2](https://github.com/gsdevme/hyundai-bluelink-mqtt/compare/v1.1.1...v1.1.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **config:** fail fast on malformed integer, boolean, URL and log values ([246db68](https://github.com/gsdevme/hyundai-bluelink-mqtt/commit/246db6842f843c9524438aa7c6047a7cd4090f85))
+* **homeassistant:** render unknown values as None in discovery templates ([acface4](https://github.com/gsdevme/hyundai-bluelink-mqtt/commit/acface4acfd625faa39457d0f2c34ddcccb8ef5b))
+* **publisher:** publish None tracker state so HA derives zone from GPS ([8968d10](https://github.com/gsdevme/hyundai-bluelink-mqtt/commit/8968d10d39d09228c3c89247024721f19c2f33b8))
+
 ## [1.1.1](https://github.com/gsdevme/hyundai-bluelink-mqtt/compare/v1.1.0...v1.1.1) (2026-08-22)
 
 
