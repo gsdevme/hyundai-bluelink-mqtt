@@ -74,25 +74,32 @@ func (s *Service) PublishState(ctx context.Context, st bluelink.VehicleState) er
 	return s.publishTracker(ctx, st)
 }
 
-// publishTracker publishes device-tracker state + GPS attributes. The state is a
-// neutral "not_home" (or "None" when unknown); HA maps the car from the
-// coordinates in the attributes.
+// trackerResetPayload is the only device_tracker state payload that lets Home
+// Assistant derive the zone from the GPS attributes. It matches HA's default
+// payload_reset: a payload equal to payload_home/payload_not_home sets the
+// entity's location_name, which HA reports as the state before it consults
+// lat/lon, so publishing "not_home" would freeze the car as away.
+const trackerResetPayload = "None"
+
+// publishTracker publishes the device-tracker topics. The state topic always
+// carries trackerResetPayload so HA resolves home/not_home/<zone> from the
+// retained GPS attributes, which are republished only when coordinates are
+// known (an unknown position keeps the last retained attributes and zone).
 func (s *Service) publishTracker(ctx context.Context, st bluelink.VehicleState) error {
-	if st.Latitude == nil || st.Longitude == nil {
-		return s.pub.Publish(ctx, s.cfg.TrackerStateTopic(), []byte("None"), true)
+	if st.Latitude != nil && st.Longitude != nil {
+		attrs := map[string]any{
+			"latitude":     *st.Latitude,
+			"longitude":    *st.Longitude,
+			"gps_accuracy": 1,
+			"source_type":  "gps",
+		}
+		body, err := json.Marshal(attrs)
+		if err != nil {
+			return fmt.Errorf("marshal tracker attributes: %w", err)
+		}
+		if err := s.pub.Publish(ctx, s.cfg.TrackerAttributesTopic(), body, true); err != nil {
+			return fmt.Errorf("publish tracker attributes: %w", err)
+		}
 	}
-	attrs := map[string]any{
-		"latitude":     *st.Latitude,
-		"longitude":    *st.Longitude,
-		"gps_accuracy": 1,
-		"source_type":  "gps",
-	}
-	body, err := json.Marshal(attrs)
-	if err != nil {
-		return fmt.Errorf("marshal tracker attributes: %w", err)
-	}
-	if err := s.pub.Publish(ctx, s.cfg.TrackerAttributesTopic(), body, true); err != nil {
-		return fmt.Errorf("publish tracker attributes: %w", err)
-	}
-	return s.pub.Publish(ctx, s.cfg.TrackerStateTopic(), []byte("not_home"), true)
+	return s.pub.Publish(ctx, s.cfg.TrackerStateTopic(), []byte(trackerResetPayload), true)
 }

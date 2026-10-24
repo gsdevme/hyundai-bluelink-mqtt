@@ -15,7 +15,7 @@ below; `internal/homeassistant` implements them.
 - **Per-entity discovery** topics: `homeassistant/<component>/{vin}_{key}/config`,
   retained. `unique_id` and `object_id` = `{vin}_{key}`.
 - **Device-tracker** needs two extra topics:
-  - `{base}/tracker/state` — `home` / `not_home` / `None`.
+  - `{base}/tracker/state` — always `None` (HA's `payload_reset`).
   - `{base}/tracker/attributes` — JSON `{latitude, longitude, gps_accuracy, source_type}`.
 
 All discovery, state, availability, and tracker publishes are **`retain=true`, QoS 1**
@@ -88,10 +88,14 @@ i.e. `ON` when not locked). Like every sensor template, it renders `None` when t
 is absent or null, so HA shows unknown rather than a misleading `OFF` (or "Unlocked").
 
 `device_tracker` (key `location`):
-- `state_topic: ~/tracker/state` (`home`/`not_home`/`None`; a real value, not coords).
+- `state_topic: ~/tracker/state` — always `None`, HA's default `payload_reset`.
 - `json_attributes_topic: ~/tracker/attributes` with `source_type: gps`, `latitude`,
-  `longitude`. HA derives home/away from the coordinates against its zones; we publish
-  `not_home` as a neutral default and let attributes drive the map position.
+  `longitude`. HA derives `home`/`not_home`/`<zone>` from the coordinates against its
+  zones only while the entity's `location_name` is unset: a payload matching
+  `payload_home`/`payload_not_home` sets `location_name`, which HA reports as the state
+  before consulting lat/lon, so publishing `not_home` would pin the car as away. Only
+  the reset payload clears `location_name`. The attributes are republished only when
+  coordinates are known, so an unknown position keeps the last retained zone.
 
 `entity_category: diagnostic` on: `battery_12v`, `charge_limit_ac`, `charge_limit_dc`,
 `ev_battery_soh`, `last_updated`, `charge_port_door`.

@@ -70,9 +70,11 @@ model, `HA` MQTT/Home Assistant, `SC` scheduling, `CF` config, `LC` lifecycle/he
   and `odometer` units are set from `DISTANCE_UNIT` (see REQ-CF-07) and both values are
   converted to it. → `homeassistant/entities.go`,
   `bluelink/model.go` (`VehicleState.InDistanceUnit`)
-- **REQ-HA-05** `device_tracker` publishes only `not_home`/`None` state (never `home`) +
-  `json_attributes_topic` with `source_type: gps` and lat/lon; HA resolves the actual zone
-  (incl. home) from the gps attributes. → `homeassistant/entities.go`, `publisher.go`
+- **REQ-HA-05** `device_tracker` publishes only the `None` reset payload on the tracker
+  state topic (never `home`/`not_home`) + `json_attributes_topic` with `source_type: gps`
+  and lat/lon; HA resolves the zone (incl. home) from the gps attributes. Any explicit
+  `home`/`not_home` payload would override GPS zone resolution.
+  → `homeassistant/entities.go`, `publisher.go`
 - **REQ-HA-06** Availability via LWT (retained `offline`); `online` published on connect;
   every entity references the availability topic. → `mqtt/client.go`, `homeassistant/discovery.go`
 - **REQ-HA-07** `entity_category: diagnostic` on SoH, 12V, charge limits, charge-port,

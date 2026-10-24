@@ -33,7 +33,8 @@ func (c Config) StateTopic() string { return c.BaseTopic() + "/state" }
 // AvailabilityTopic is the LWT/availability topic.
 func (c Config) AvailabilityTopic() string { return c.BaseTopic() + "/availability" }
 
-// TrackerStateTopic carries home/not_home/None for the device_tracker.
+// TrackerStateTopic carries the device_tracker's "None" reset payload (HA's
+// default payload_reset); HA derives the zone from TrackerAttributesTopic.
 func (c Config) TrackerStateTopic() string { return c.BaseTopic() + "/tracker/state" }
 
 // TrackerAttributesTopic carries the GPS attributes JSON.
